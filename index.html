@@ -157,6 +157,54 @@
   </div>
 </div>
 
+<!-- Custom / Other Account Modal -->
+<div id="modalCustomAccount" class="modal-overlay hidden">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h2>Agregar otra cuenta</h2>
+    <p class="modal-hint">Para bancos que no están en la lista, o cuentas manuales (efectivo, otra tarjeta, etc.).</p>
+    <form id="formCustomAccount">
+      <label>Nombre del banco o cuenta
+        <input type="text" id="caName" placeholder="Ej. Scotiabank" required>
+      </label>
+      <label>Tipo de cuenta
+        <select id="caType">
+          <option value="Cuenta de ahorros">Cuenta de ahorros</option>
+          <option value="Cuenta corriente">Cuenta corriente</option>
+          <option value="Tarjeta de crédito">Tarjeta de crédito</option>
+          <option value="Efectivo">Efectivo</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </label>
+      <label>Saldo actual
+        <input type="number" id="caBalance" step="0.01" placeholder="0.00" required>
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="secondary-btn" id="btnCancelCustomAccount">Cancelar</button>
+        <button type="submit" class="primary-btn">Agregar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Balance Modal -->
+<div id="modalEditBalance" class="modal-overlay hidden">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h2>Ajustar saldo</h2>
+    <p class="modal-hint" id="ebAccountName"></p>
+    <form id="formEditBalance">
+      <label>Saldo real actual
+        <input type="number" id="ebBalance" step="0.01" required>
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="secondary-btn" id="btnCancelEditBalance">Cancelar</button>
+        <button type="submit" class="primary-btn">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div id="toast" class="toast hidden"></div>
 
 <script src="app.js"></script>

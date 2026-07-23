@@ -198,8 +198,17 @@ canvas { width: 100%; display: block; background: var(--surface); border: 1px so
 .account-card .name { font-weight: 700; font-size: 14px; }
 .account-card .type { font-size: 12px; color: var(--text-dim); }
 .account-card .bal { font-weight: 700; font-size: 15px; }
+.account-card .balwrap { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.account-card .edit-btn {
+  background: none; border: none; color: var(--accent); font-size: 11px; cursor: pointer; padding: 0; text-decoration: underline;
+}
 .account-card .remove-btn {
   background: none; border: none; color: var(--danger); font-size: 18px; cursor: pointer; padding: 4px 8px;
+}
+
+.bank-option.other {
+  border-style: dashed;
+  border-color: var(--accent);
 }
 
 .primary-btn {
@@ -329,14 +338,14 @@ canvas { width: 100%; display: block; background: var(--surface); border: 1px so
 .modal-sheet h2 { font-size: 18px; margin: 0 0 14px; }
 .modal-hint { color: var(--text-dim); font-size: 13px; margin-top: -8px; margin-bottom: 14px; }
 
-#formAdd label {
+.modal-sheet form label {
   display: block;
   font-size: 12px;
   color: var(--text-dim);
   margin-top: 12px;
   margin-bottom: 5px;
 }
-#formAdd input, #formAdd select {
+.modal-sheet form input, .modal-sheet form select {
   width: 100%;
   background: var(--surface-2);
   border: 1px solid var(--border);

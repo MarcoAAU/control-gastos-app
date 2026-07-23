@@ -358,7 +358,10 @@ function renderAccountsView() {
         <div class="name">${escapeHTML(acc.nickname)}</div>
         <div class="type">${escapeHTML(acc.bankName)} · ${escapeHTML(acc.type)}</div>
       </div>
-      <div class="bal">${fmtMoney(acc.balance)}</div>
+      <div class="balwrap">
+        <div class="bal">${fmtMoney(acc.balance)}</div>
+        <button class="edit-btn" data-edit-account="${acc.id}">Ajustar saldo</button>
+      </div>
       <button class="remove-btn" data-remove-account="${acc.id}" aria-label="Eliminar cuenta">✕</button>
     </div>
   `).join("");
@@ -376,6 +379,12 @@ function renderAccountsView() {
       }
     });
   });
+
+  list.querySelectorAll("[data-edit-account]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      openEditBalanceModal(btn.getAttribute("data-edit-account"));
+    });
+  });
 }
 
 function openBankModal() {
@@ -388,15 +397,90 @@ function openBankModal() {
         <div class="btype">Simulado · toca para conectar</div>
       </div>
     </div>
-  `).join("");
+  `).join("") + `
+    <div class="bank-option other" data-bank="other">
+      <div class="emoji">➕</div>
+      <div>
+        <div class="bname">Otro</div>
+        <div class="btype">Agregar un banco o cuenta que no está en la lista</div>
+      </div>
+    </div>
+  `;
   opts.querySelectorAll("[data-bank]").forEach(el => {
     el.addEventListener("click", () => {
-      const bank = DEMO_BANKS.find(b => b.id === el.getAttribute("data-bank"));
+      const bankId = el.getAttribute("data-bank");
+      if (bankId === "other") {
+        document.getElementById("modalBank").classList.add("hidden");
+        openCustomAccountModal();
+        return;
+      }
+      const bank = DEMO_BANKS.find(b => b.id === bankId);
       connectSimulatedBank(bank);
     });
   });
   document.getElementById("modalBank").classList.remove("hidden");
 }
+
+function openCustomAccountModal() {
+  document.getElementById("caName").value = "";
+  document.getElementById("caType").value = "Cuenta de ahorros";
+  document.getElementById("caBalance").value = "";
+  document.getElementById("modalCustomAccount").classList.remove("hidden");
+}
+
+document.getElementById("formCustomAccount").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const name = document.getElementById("caName").value.trim();
+  const type = document.getElementById("caType").value;
+  const balance = parseFloat(document.getElementById("caBalance").value);
+  if (!name || isNaN(balance)) return;
+
+  state.accounts.push({
+    id: uid(),
+    bankId: "manual",
+    bankName: name,
+    type,
+    nickname: name,
+    balance,
+    emoji: "🏦",
+  });
+  saveState();
+  document.getElementById("modalCustomAccount").classList.add("hidden");
+  renderAccountsView();
+  populateFilterSelects();
+  renderHome();
+  showToast("Cuenta agregada");
+});
+document.getElementById("btnCancelCustomAccount").addEventListener("click", () => {
+  document.getElementById("modalCustomAccount").classList.add("hidden");
+});
+
+function openEditBalanceModal(accountId) {
+  const acc = accountById(accountId);
+  if (!acc) return;
+  document.getElementById("ebAccountName").textContent = `${acc.emoji} ${acc.nickname}`;
+  document.getElementById("ebBalance").value = acc.balance;
+  document.getElementById("formEditBalance").dataset.accountId = accountId;
+  document.getElementById("modalEditBalance").classList.remove("hidden");
+}
+
+document.getElementById("formEditBalance").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const accountId = document.getElementById("formEditBalance").dataset.accountId;
+  const acc = accountById(accountId);
+  const newBalance = parseFloat(document.getElementById("ebBalance").value);
+  if (!acc || isNaN(newBalance)) return;
+
+  acc.balance = newBalance;
+  saveState();
+  document.getElementById("modalEditBalance").classList.add("hidden");
+  renderAccountsView();
+  renderHome();
+  showToast("Saldo actualizado");
+});
+document.getElementById("btnCancelEditBalance").addEventListener("click", () => {
+  document.getElementById("modalEditBalance").classList.add("hidden");
+});
 
 function connectSimulatedBank(bank) {
   const newAccount = {
