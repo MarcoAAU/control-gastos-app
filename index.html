@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>Mis Gastos</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="topbar-title">
+      <span class="logo">💰</span>
+      <h1>Mis Gastos</h1>
+    </div>
+    <button id="btnSettings" class="icon-btn" aria-label="Ajustes">⚙️</button>
+  </header>
+
+  <!-- Main scrollable content -->
+  <main id="mainContent">
+
+    <!-- HOME VIEW -->
+    <section id="view-home" class="view">
+
+      <div class="period-tabs" role="tablist">
+        <button class="period-tab active" data-period="day">Hoy</button>
+        <button class="period-tab" data-period="week">Semana</button>
+        <button class="period-tab" data-period="month">Mes</button>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-label">Gastado</div>
+        <div class="summary-amount" id="summaryAmount">$0</div>
+        <div class="summary-sub" id="summarySub">vs. periodo anterior</div>
+      </div>
+
+      <div class="accounts-row" id="accountsRow"></div>
+
+      <div class="section-header">
+        <h2>Por categoría</h2>
+      </div>
+      <canvas id="categoryChart" height="180"></canvas>
+      <div id="categoryLegend" class="legend"></div>
+
+      <div class="section-header">
+        <h2>Tendencia</h2>
+      </div>
+      <canvas id="trendChart" height="140"></canvas>
+
+      <div class="section-header">
+        <h2>Movimientos recientes</h2>
+        <button class="link-btn" id="btnViewAll">Ver todos</button>
+      </div>
+      <div id="recentList" class="tx-list"></div>
+
+    </section>
+
+    <!-- TRANSACTIONS VIEW -->
+    <section id="view-transactions" class="view hidden">
+      <div class="section-header">
+        <h2>Todos los movimientos</h2>
+      </div>
+      <div class="filter-row">
+        <select id="filterCategory"><option value="">Todas las categorías</option></select>
+        <select id="filterAccount"><option value="">Todas las cuentas</option></select>
+      </div>
+      <div id="allTxList" class="tx-list"></div>
+    </section>
+
+    <!-- ACCOUNTS / BANK VIEW -->
+    <section id="view-accounts" class="view hidden">
+      <div class="section-header">
+        <h2>Cuentas conectadas</h2>
+      </div>
+      <div id="accountsList" class="account-list"></div>
+      <button id="btnConnectBank" class="primary-btn">+ Conectar banco</button>
+    </section>
+
+    <!-- SETTINGS VIEW -->
+    <section id="view-settings" class="view hidden">
+      <div class="section-header"><h2>Ajustes</h2></div>
+      <div class="settings-list">
+        <button class="settings-item" id="btnResetDemo">Restablecer datos de demo</button>
+        <button class="settings-item danger" id="btnClearAll">Borrar todos los datos</button>
+      </div>
+      <p class="disclaimer">
+        Esta app usa una <strong>conexión bancaria simulada</strong> con fines de demostración.
+        No se envían ni almacenan credenciales bancarias reales. Para una integración real,
+        se necesitaría un agregador certificado (p. ej. Plaid o Belvo) y un backend seguro.
+      </p>
+    </section>
+
+  </main>
+
+  <!-- Floating add button -->
+  <button id="btnAdd" class="fab" aria-label="Agregar gasto">+</button>
+
+  <!-- Bottom nav -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-view="home">
+      <span>🏠</span><small>Inicio</small>
+    </button>
+    <button class="nav-btn" data-view="transactions">
+      <span>📄</span><small>Movimientos</small>
+    </button>
+    <button class="nav-btn" data-view="accounts">
+      <span>🏦</span><small>Cuentas</small>
+    </button>
+  </nav>
+
+</div>
+
+<!-- Add Expense Modal -->
+<div id="modalAdd" class="modal-overlay hidden">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h2>Nuevo gasto</h2>
+    <form id="formAdd">
+      <label>Monto
+        <input type="number" id="fAmount" step="0.01" min="0.01" placeholder="0.00" required>
+      </label>
+      <label>Descripción
+        <input type="text" id="fDesc" placeholder="Ej. Supermercado" required>
+      </label>
+      <label>Categoría
+        <select id="fCategory"></select>
+      </label>
+      <label>Cuenta
+        <select id="fAccount"></select>
+      </label>
+      <label>Fecha
+        <input type="date" id="fDate" required>
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="secondary-btn" id="btnCancelAdd">Cancelar</button>
+        <button type="submit" class="primary-btn">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Connect Bank Modal -->
+<div id="modalBank" class="modal-overlay hidden">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h2>Conectar banco (demo)</h2>
+    <p class="modal-hint">Selecciona un banco simulado. No se solicitan credenciales reales.</p>
+    <div id="bankOptions" class="bank-options"></div>
+    <button type="button" class="secondary-btn full" id="btnCancelBank">Cancelar</button>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
