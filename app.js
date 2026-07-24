@@ -130,7 +130,7 @@ function makeDemoState() {
   return { accounts, transactions };
 }
 
-let state = loadState() || makeDemoState();
+let state = loadState() || { accounts: [], transactions: [] };
 if (!loadState()) saveState();
 state.transactions.forEach(t => { t.type = t.type || "expense"; });
 
