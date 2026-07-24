@@ -286,9 +286,15 @@ function setupCanvasSize(canvas) {
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
 }
 
-function txItemHTML(t) {
+function txItemHTML(t, actions) {
   const cat = categoryById(t.categoryId);
   const acc = accountById(t.accountId);
+  const actionsHTML = actions ? `
+    <div class="tx-actions">
+      <button class="tx-action-btn" data-edit-tx="${t.id}">Editar</button>
+      <button class="tx-action-btn danger" data-delete-tx="${t.id}">Eliminar</button>
+    </div>
+  ` : "";
   return `
     <div class="tx-item">
       <div class="tx-icon" style="background:${cat.color}22;color:${cat.color}">${cat.emoji}</div>
@@ -296,7 +302,10 @@ function txItemHTML(t) {
         <div class="tx-desc">${escapeHTML(t.desc)}</div>
         <div class="tx-meta">${cat.name} · ${acc ? acc.nickname : "—"} · ${t.date}</div>
       </div>
-      <div class="tx-amount">-${fmtMoney(t.amount)}</div>
+      <div class="tx-right">
+        <div class="tx-amount">-${fmtMoney(t.amount)}</div>
+        ${actionsHTML}
+      </div>
     </div>
   `;
 }
@@ -314,7 +323,7 @@ function renderRecentList(currentPeriodTx) {
     list.innerHTML = `<div class="empty-state">No hay movimientos en este periodo.</div>`;
     return;
   }
-  list.innerHTML = sorted.map(txItemHTML).join("");
+  list.innerHTML = sorted.map(t => txItemHTML(t, false)).join("");
 }
 
 /* ===================== Transactions view ===================== */
@@ -340,7 +349,34 @@ function renderAllTx() {
     container.innerHTML = `<div class="empty-state">No hay movimientos.</div>`;
     return;
   }
-  container.innerHTML = list.map(txItemHTML).join("");
+  container.innerHTML = list.map(t => txItemHTML(t, true)).join("");
+
+  container.querySelectorAll("[data-edit-tx]").forEach(btn => {
+    btn.addEventListener("click", () => openEditTxModal(btn.getAttribute("data-edit-tx")));
+  });
+  container.querySelectorAll("[data-delete-tx]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.getAttribute("data-delete-tx");
+      showConfirm("¿Eliminar este movimiento? Si afectaba el saldo de una cuenta, se le devolverá el monto.", () => {
+        deleteTransaction(id);
+        renderAllTx();
+        renderHome();
+        renderAccountsView();
+        showToast("Movimiento eliminado");
+      });
+    });
+  });
+}
+
+function deleteTransaction(id) {
+  const tx = state.transactions.find(t => t.id === id);
+  if (!tx) return;
+  if (tx.source === "manual") {
+    const acc = accountById(tx.accountId);
+    if (acc) acc.balance += tx.amount;
+  }
+  state.transactions = state.transactions.filter(t => t.id !== id);
+  saveState();
 }
 
 /* ===================== Accounts view ===================== */
@@ -530,14 +566,35 @@ function connectSimulatedBank(bank) {
 
 /* ===================== Add expense modal ===================== */
 
-function populateAddForm() {
+let editingTxId = null;
+
+function populateAddForm(tx) {
   const catSel = document.getElementById("fCategory");
   catSel.innerHTML = CATEGORIES.map(c => `<option value="${c.id}">${c.emoji} ${c.name}</option>`).join("");
   const accSel = document.getElementById("fAccount");
   accSel.innerHTML = state.accounts.map(a => `<option value="${a.id}">${a.nickname}</option>`).join("");
-  document.getElementById("fDate").value = todayISO();
-  document.getElementById("fAmount").value = "";
-  document.getElementById("fDesc").value = "";
+
+  if (tx) {
+    document.getElementById("addModalTitle").textContent = "Editar gasto";
+    document.getElementById("fAmount").value = tx.amount;
+    document.getElementById("fDesc").value = tx.desc;
+    document.getElementById("fCategory").value = tx.categoryId;
+    document.getElementById("fAccount").value = tx.accountId;
+    document.getElementById("fDate").value = tx.date;
+  } else {
+    document.getElementById("addModalTitle").textContent = "Nuevo gasto";
+    document.getElementById("fDate").value = todayISO();
+    document.getElementById("fAmount").value = "";
+    document.getElementById("fDesc").value = "";
+  }
+}
+
+function openEditTxModal(id) {
+  const tx = state.transactions.find(t => t.id === id);
+  if (!tx) return;
+  editingTxId = id;
+  populateAddForm(tx);
+  document.getElementById("modalAdd").classList.remove("hidden");
 }
 
 document.getElementById("formAdd").addEventListener("submit", (e) => {
@@ -549,16 +606,36 @@ document.getElementById("formAdd").addEventListener("submit", (e) => {
   const date = document.getElementById("fDate").value;
   if (!amount || amount <= 0 || !desc || !date) return;
 
-  state.transactions.push({ id: uid(), date, amount, desc, categoryId, accountId, source: "manual" });
-  const acc = accountById(accountId);
-  if (acc) acc.balance -= amount;
+  if (editingTxId) {
+    const tx = state.transactions.find(t => t.id === editingTxId);
+    if (tx) {
+      if (tx.source === "manual") {
+        const oldAcc = accountById(tx.accountId);
+        if (oldAcc) oldAcc.balance += tx.amount;
+      }
+      tx.amount = amount;
+      tx.desc = desc;
+      tx.categoryId = categoryId;
+      tx.accountId = accountId;
+      tx.date = date;
+      tx.source = "manual";
+      const newAcc = accountById(accountId);
+      if (newAcc) newAcc.balance -= amount;
+    }
+    editingTxId = null;
+    showToast("Gasto actualizado");
+  } else {
+    state.transactions.push({ id: uid(), date, amount, desc, categoryId, accountId, source: "manual" });
+    const acc = accountById(accountId);
+    if (acc) acc.balance -= amount;
+    showToast("Gasto guardado");
+  }
 
   saveState();
   document.getElementById("modalAdd").classList.add("hidden");
   renderHome();
   renderAllTx();
   renderAccountsView();
-  showToast("Gasto guardado");
 });
 
 /* ===================== Navigation ===================== */
@@ -590,10 +667,12 @@ document.getElementById("btnViewAll").addEventListener("click", () => switchView
 document.getElementById("btnSettings").addEventListener("click", () => switchView("settings"));
 
 document.getElementById("btnAdd").addEventListener("click", () => {
+  editingTxId = null;
   populateAddForm();
   document.getElementById("modalAdd").classList.remove("hidden");
 });
 document.getElementById("btnCancelAdd").addEventListener("click", () => {
+  editingTxId = null;
   document.getElementById("modalAdd").classList.add("hidden");
 });
 
