@@ -193,7 +193,7 @@ function renderHome() {
   const { start, end } = periodRange(currentPeriod);
   const current = state.transactions.filter(t => txInRange(t, start, end));
 
-  const income = current.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0);
+  const income = state.accounts.reduce((s, a) => s + a.balance, 0);
   const expense = current.filter(t => t.type !== "income").reduce((s, t) => s + t.amount, 0);
   const net = income - expense;
 
