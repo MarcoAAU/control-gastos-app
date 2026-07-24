@@ -369,14 +369,14 @@ function renderAccountsView() {
   list.querySelectorAll("[data-remove-account]").forEach(btn => {
     btn.addEventListener("click", () => {
       const id = btn.getAttribute("data-remove-account");
-      if (confirm("¿Desconectar esta cuenta? Sus movimientos se conservarán.")) {
+      showConfirm("¿Desconectar esta cuenta? Sus movimientos se conservarán.", () => {
         state.accounts = state.accounts.filter(a => a.id !== id);
         saveState();
         renderAccountsView();
         populateFilterSelects();
         renderHome();
         showToast("Cuenta desconectada");
-      }
+      });
     });
   });
 
@@ -606,7 +606,7 @@ document.getElementById("filterCategory").addEventListener("change", renderAllTx
 document.getElementById("filterAccount").addEventListener("change", renderAllTx);
 
 document.getElementById("btnResetDemo").addEventListener("click", () => {
-  if (confirm("Esto reemplazará tus datos actuales con datos de demostración nuevos. ¿Continuar?")) {
+  showConfirm("Esto reemplazará tus datos actuales con datos de demostración nuevos. ¿Continuar?", () => {
     state = makeDemoState();
     saveState();
     populateFilterSelects();
@@ -614,10 +614,10 @@ document.getElementById("btnResetDemo").addEventListener("click", () => {
     renderAccountsView();
     renderAllTx();
     showToast("Datos de demo restablecidos");
-  }
+  });
 });
 document.getElementById("btnClearAll").addEventListener("click", () => {
-  if (confirm("Esto borrará TODOS tus datos (cuentas y movimientos). ¿Continuar?")) {
+  showConfirm("Esto borrará TODOS tus datos (cuentas y movimientos). ¿Continuar?", () => {
     state = { accounts: [], transactions: [] };
     saveState();
     populateFilterSelects();
@@ -625,7 +625,24 @@ document.getElementById("btnClearAll").addEventListener("click", () => {
     renderAccountsView();
     renderAllTx();
     showToast("Datos borrados");
-  }
+  });
+});
+
+let confirmCallback = null;
+function showConfirm(message, onConfirm) {
+  document.getElementById("confirmMessage").textContent = message;
+  confirmCallback = onConfirm;
+  document.getElementById("modalConfirm").classList.remove("hidden");
+}
+document.getElementById("btnConfirmOk").addEventListener("click", () => {
+  document.getElementById("modalConfirm").classList.add("hidden");
+  const cb = confirmCallback;
+  confirmCallback = null;
+  if (cb) cb();
+});
+document.getElementById("btnConfirmCancel").addEventListener("click", () => {
+  document.getElementById("modalConfirm").classList.add("hidden");
+  confirmCallback = null;
 });
 
 let toastTimer;
