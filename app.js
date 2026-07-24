@@ -13,6 +13,14 @@ const CATEGORIES = [
   { id: "otros", name: "Otros", emoji: "📦", color: "#93a2c6" },
 ];
 
+const INCOME_CATEGORIES = [
+  { id: "salario", name: "Salario", emoji: "💼", color: "#4bd9c0" },
+  { id: "freelance", name: "Freelance", emoji: "💻", color: "#6c8dff" },
+  { id: "regalo", name: "Regalo", emoji: "🎁", color: "#ffd166" },
+  { id: "inversion", name: "Inversión", emoji: "📈", color: "#5eead4" },
+  { id: "otro_ingreso", name: "Otro ingreso", emoji: "💰", color: "#93a2c6" },
+];
+
 const DEMO_BANKS = [
   { id: "bancolombia", name: "Bancolombia", emoji: "🏦" },
   { id: "davivienda", name: "Davivienda", emoji: "🏛️" },
@@ -86,8 +94,37 @@ function makeDemoState() {
         categoryId: cat.id,
         accountId: acc.id,
         source: "bank",
+        type: "expense",
       });
     }
+  }
+
+  // recurring income (salary every ~15 days) plus an occasional extra
+  for (let d = 0; d < 45; d += 15) {
+    const date = new Date(now); date.setDate(date.getDate() - d);
+    transactions.push({
+      id: uid(),
+      date: date.toISOString().slice(0, 10),
+      amount: Math.round(2200000 + Math.random() * 600000),
+      desc: "Salario",
+      categoryId: "salario",
+      accountId: accounts[0].id,
+      source: "bank",
+      type: "income",
+    });
+  }
+  if (Math.random() < 0.6) {
+    const date = new Date(now); date.setDate(date.getDate() - Math.floor(Math.random() * 45));
+    transactions.push({
+      id: uid(),
+      date: date.toISOString().slice(0, 10),
+      amount: Math.round(300000 + Math.random() * 500000),
+      desc: "Proyecto freelance",
+      categoryId: "freelance",
+      accountId: accounts[0].id,
+      source: "bank",
+      type: "income",
+    });
   }
 
   return { accounts, transactions };
@@ -95,14 +132,19 @@ function makeDemoState() {
 
 let state = loadState() || makeDemoState();
 if (!loadState()) saveState();
+state.transactions.forEach(t => { t.type = t.type || "expense"; });
 
 /* ===================== Helpers ===================== */
 
 function categoryById(id) {
-  return CATEGORIES.find(c => c.id === id) || CATEGORIES[CATEGORIES.length - 1];
+  return CATEGORIES.find(c => c.id === id) || INCOME_CATEGORIES.find(c => c.id === id) || CATEGORIES[CATEGORIES.length - 1];
 }
 function accountById(id) {
   return state.accounts.find(a => a.id === id);
+}
+
+function balanceDelta(tx) {
+  return tx.type === "income" ? tx.amount : -tx.amount;
 }
 
 function startOfDay(d) { const x = new Date(d); x.setHours(0,0,0,0); return x; }
@@ -148,28 +190,21 @@ let currentPeriod = "day";
 let charts = {};
 
 function renderHome() {
-  const { start, end, prevStart, prevEnd } = periodRange(currentPeriod);
+  const { start, end } = periodRange(currentPeriod);
   const current = state.transactions.filter(t => txInRange(t, start, end));
-  const previous = state.transactions.filter(t => txInRange(t, prevStart, prevEnd));
 
-  const totalCurrent = current.reduce((s, t) => s + t.amount, 0);
-  const totalPrev = previous.reduce((s, t) => s + t.amount, 0);
+  const income = current.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0);
+  const expense = current.filter(t => t.type !== "income").reduce((s, t) => s + t.amount, 0);
+  const net = income - expense;
 
-  document.getElementById("summaryAmount").textContent = fmtMoney(totalCurrent);
-
-  const sub = document.getElementById("summarySub");
-  if (totalPrev > 0) {
-    const diff = ((totalCurrent - totalPrev) / totalPrev) * 100;
-    const label = { day: "vs. ayer", week: "vs. semana pasada", month: "vs. mes pasado" }[currentPeriod];
-    sub.textContent = `${diff >= 0 ? "▲" : "▼"} ${Math.abs(diff).toFixed(0)}% ${label}`;
-    sub.className = "summary-sub " + (diff >= 0 ? "up" : "down");
-  } else {
-    sub.textContent = { day: "hoy", week: "esta semana", month: "este mes" }[currentPeriod];
-    sub.className = "summary-sub";
-  }
+  document.getElementById("statIncome").textContent = fmtMoney(income);
+  document.getElementById("statExpense").textContent = fmtMoney(expense);
+  const balanceEl = document.getElementById("statBalance");
+  balanceEl.textContent = fmtMoney(net);
+  balanceEl.style.color = net < 0 ? "var(--danger)" : "var(--safe)";
 
   renderAccountsRow();
-  renderCategoryChart(current);
+  renderCategoryChart(current.filter(t => t.type !== "income"));
   renderTrendChart();
   renderRecentList(current);
 }
@@ -253,7 +288,7 @@ function renderTrendChart() {
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(now); d.setDate(d.getDate() - i);
     const next = new Date(d); next.setDate(next.getDate() + 1);
-    const total = state.transactions.filter(t => txInRange(t, d, next)).reduce((s, t) => s + t.amount, 0);
+    const total = state.transactions.filter(t => t.type !== "income" && txInRange(t, d, next)).reduce((s, t) => s + t.amount, 0);
     buckets.push({ date: d, total });
   }
 
@@ -303,7 +338,7 @@ function txItemHTML(t, actions) {
         <div class="tx-meta">${cat.name} · ${acc ? acc.nickname : "—"} · ${t.date}</div>
       </div>
       <div class="tx-right">
-        <div class="tx-amount">-${fmtMoney(t.amount)}</div>
+        <div class="tx-amount${t.type === "income" ? " income" : ""}">${t.type === "income" ? "+" : "-"}${fmtMoney(t.amount)}</div>
         ${actionsHTML}
       </div>
     </div>
@@ -332,7 +367,7 @@ function populateFilterSelects() {
   const catSel = document.getElementById("filterCategory");
   const accSel = document.getElementById("filterAccount");
   catSel.innerHTML = `<option value="">Todas las categorías</option>` +
-    CATEGORIES.map(c => `<option value="${c.id}">${c.emoji} ${c.name}</option>`).join("");
+    CATEGORIES.concat(INCOME_CATEGORIES).map(c => `<option value="${c.id}">${c.emoji} ${c.name}</option>`).join("");
   accSel.innerHTML = `<option value="">Todas las cuentas</option>` +
     state.accounts.map(a => `<option value="${a.id}">${a.nickname}</option>`).join("");
 }
@@ -373,7 +408,7 @@ function deleteTransaction(id) {
   if (!tx) return;
   if (tx.source === "manual") {
     const acc = accountById(tx.accountId);
-    if (acc) acc.balance += tx.amount;
+    if (acc) acc.balance -= balanceDelta(tx);
   }
   state.transactions = state.transactions.filter(t => t.id !== id);
   saveState();
@@ -553,6 +588,20 @@ function connectSimulatedBank(bank) {
       categoryId: catId,
       accountId: newAccount.id,
       source: "bank",
+      type: "expense",
+    });
+  }
+  if (Math.random() < 0.4) {
+    const date = new Date(now); date.setDate(date.getDate() - Math.floor(Math.random() * 10));
+    state.transactions.push({
+      id: uid(),
+      date: date.toISOString().slice(0, 10),
+      amount: Math.round(300000 + Math.random() * 500000),
+      desc: "Transferencia recibida",
+      categoryId: "otro_ingreso",
+      accountId: newAccount.id,
+      source: "bank",
+      type: "income",
     });
   }
 
@@ -568,26 +617,44 @@ function connectSimulatedBank(bank) {
 
 let editingTxId = null;
 
-function populateAddForm(tx) {
+function setFormType(type) {
+  document.getElementById("fType").value = type;
+  document.querySelectorAll(".type-btn").forEach(b => b.classList.toggle("active", b.dataset.type === type));
   const catSel = document.getElementById("fCategory");
-  catSel.innerHTML = CATEGORIES.map(c => `<option value="${c.id}">${c.emoji} ${c.name}</option>`).join("");
+  const cats = type === "income" ? INCOME_CATEGORIES : CATEGORIES;
+  catSel.innerHTML = cats.map(c => `<option value="${c.id}">${c.emoji} ${c.name}</option>`).join("");
+}
+
+function populateAddForm(tx) {
   const accSel = document.getElementById("fAccount");
   accSel.innerHTML = state.accounts.map(a => `<option value="${a.id}">${a.nickname}</option>`).join("");
 
+  const type = tx ? (tx.type || "expense") : "expense";
+  setFormType(type);
+
   if (tx) {
-    document.getElementById("addModalTitle").textContent = "Editar gasto";
+    document.getElementById("addModalTitle").textContent = type === "income" ? "Editar ingreso" : "Editar gasto";
     document.getElementById("fAmount").value = tx.amount;
     document.getElementById("fDesc").value = tx.desc;
     document.getElementById("fCategory").value = tx.categoryId;
     document.getElementById("fAccount").value = tx.accountId;
     document.getElementById("fDate").value = tx.date;
   } else {
-    document.getElementById("addModalTitle").textContent = "Nuevo gasto";
+    document.getElementById("addModalTitle").textContent = "Nuevo movimiento";
     document.getElementById("fDate").value = todayISO();
     document.getElementById("fAmount").value = "";
     document.getElementById("fDesc").value = "";
   }
 }
+
+document.querySelectorAll(".type-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    setFormType(btn.dataset.type);
+    if (editingTxId) {
+      document.getElementById("addModalTitle").textContent = btn.dataset.type === "income" ? "Editar ingreso" : "Editar gasto";
+    }
+  });
+});
 
 function openEditTxModal(id) {
   const tx = state.transactions.find(t => t.id === id);
@@ -604,6 +671,7 @@ document.getElementById("formAdd").addEventListener("submit", (e) => {
   const categoryId = document.getElementById("fCategory").value;
   const accountId = document.getElementById("fAccount").value;
   const date = document.getElementById("fDate").value;
+  const type = document.getElementById("fType").value;
   if (!amount || amount <= 0 || !desc || !date) return;
 
   if (editingTxId) {
@@ -611,24 +679,26 @@ document.getElementById("formAdd").addEventListener("submit", (e) => {
     if (tx) {
       if (tx.source === "manual") {
         const oldAcc = accountById(tx.accountId);
-        if (oldAcc) oldAcc.balance += tx.amount;
+        if (oldAcc) oldAcc.balance -= balanceDelta(tx);
       }
       tx.amount = amount;
       tx.desc = desc;
       tx.categoryId = categoryId;
       tx.accountId = accountId;
       tx.date = date;
+      tx.type = type;
       tx.source = "manual";
       const newAcc = accountById(accountId);
-      if (newAcc) newAcc.balance -= amount;
+      if (newAcc) newAcc.balance += balanceDelta(tx);
     }
     editingTxId = null;
-    showToast("Gasto actualizado");
+    showToast(type === "income" ? "Ingreso actualizado" : "Gasto actualizado");
   } else {
-    state.transactions.push({ id: uid(), date, amount, desc, categoryId, accountId, source: "manual" });
+    const tx = { id: uid(), date, amount, desc, categoryId, accountId, source: "manual", type };
+    state.transactions.push(tx);
     const acc = accountById(accountId);
-    if (acc) acc.balance -= amount;
-    showToast("Gasto guardado");
+    if (acc) acc.balance += balanceDelta(tx);
+    showToast(type === "income" ? "Ingreso guardado" : "Gasto guardado");
   }
 
   saveState();
