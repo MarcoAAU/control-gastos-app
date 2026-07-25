@@ -144,7 +144,7 @@ function accountById(id) {
 }
 
 function balanceDelta(tx) {
-  return tx.type === "income" ? tx.amount : -tx.amount;
+  return tx.type === "income" ? tx.amount : 0;
 }
 
 function startOfDay(d) { const x = new Date(d); x.setHours(0,0,0,0); return x; }
@@ -406,10 +406,8 @@ function renderAllTx() {
 function deleteTransaction(id) {
   const tx = state.transactions.find(t => t.id === id);
   if (!tx) return;
-  if (tx.source === "manual") {
-    const acc = accountById(tx.accountId);
-    if (acc) acc.balance -= balanceDelta(tx);
-  }
+  const acc = accountById(tx.accountId);
+  if (acc) acc.balance -= balanceDelta(tx);
   state.transactions = state.transactions.filter(t => t.id !== id);
   saveState();
 }
@@ -480,22 +478,26 @@ function openBankModal() {
   opts.querySelectorAll("[data-bank]").forEach(el => {
     el.addEventListener("click", () => {
       const bankId = el.getAttribute("data-bank");
+      document.getElementById("modalBank").classList.add("hidden");
       if (bankId === "other") {
-        document.getElementById("modalBank").classList.add("hidden");
         openCustomAccountModal();
-        return;
+      } else {
+        const bank = DEMO_BANKS.find(b => b.id === bankId);
+        openCustomAccountModal(bank);
       }
-      const bank = DEMO_BANKS.find(b => b.id === bankId);
-      connectSimulatedBank(bank);
     });
   });
   document.getElementById("modalBank").classList.remove("hidden");
 }
 
-function openCustomAccountModal() {
-  document.getElementById("caName").value = "";
+let customAccountEmoji = "🏦";
+
+function openCustomAccountModal(prefillBank) {
+  document.getElementById("customAccountTitle").textContent = prefillBank ? `Conectar ${prefillBank.name}` : "Agregar cuenta";
+  document.getElementById("caName").value = prefillBank ? prefillBank.name : "";
   document.getElementById("caType").value = "Cuenta de ahorros";
   document.getElementById("caBalance").value = "";
+  customAccountEmoji = prefillBank ? prefillBank.emoji : "🏦";
   document.getElementById("modalCustomAccount").classList.remove("hidden");
 }
 
@@ -513,7 +515,7 @@ document.getElementById("formCustomAccount").addEventListener("submit", (e) => {
     type,
     nickname: name,
     balance,
-    emoji: "🏦",
+    emoji: customAccountEmoji,
   });
   saveState();
   document.getElementById("modalCustomAccount").classList.add("hidden");
@@ -552,66 +554,6 @@ document.getElementById("formEditBalance").addEventListener("submit", (e) => {
 document.getElementById("btnCancelEditBalance").addEventListener("click", () => {
   document.getElementById("modalEditBalance").classList.add("hidden");
 });
-
-function connectSimulatedBank(bank) {
-  const newAccount = {
-    id: uid(),
-    bankId: bank.id,
-    bankName: bank.name,
-    type: "Cuenta de ahorros",
-    nickname: bank.name,
-    balance: Math.round(500000 + Math.random() * 2500000),
-    emoji: bank.emoji,
-  };
-  state.accounts.push(newAccount);
-
-  // simulate importing recent transactions from the bank
-  const sampleByCategory = {
-    comida: ["Supermercado", "Restaurante"],
-    transporte: ["Uber", "Gasolina"],
-    entretenimiento: ["Suscripción", "Cine"],
-    salud: ["Farmacia"],
-    compras: ["Ropa"],
-  };
-  const catIds = Object.keys(sampleByCategory);
-  const now = new Date();
-  for (let d = 0; d < 10; d++) {
-    if (Math.random() < 0.5) continue;
-    const date = new Date(now); date.setDate(date.getDate() - d);
-    const catId = catIds[Math.floor(Math.random() * catIds.length)];
-    const descs = sampleByCategory[catId];
-    state.transactions.push({
-      id: uid(),
-      date: date.toISOString().slice(0, 10),
-      amount: Math.round(20000 + Math.random() * 150000),
-      desc: descs[Math.floor(Math.random() * descs.length)],
-      categoryId: catId,
-      accountId: newAccount.id,
-      source: "bank",
-      type: "expense",
-    });
-  }
-  if (Math.random() < 0.4) {
-    const date = new Date(now); date.setDate(date.getDate() - Math.floor(Math.random() * 10));
-    state.transactions.push({
-      id: uid(),
-      date: date.toISOString().slice(0, 10),
-      amount: Math.round(300000 + Math.random() * 500000),
-      desc: "Transferencia recibida",
-      categoryId: "otro_ingreso",
-      accountId: newAccount.id,
-      source: "bank",
-      type: "income",
-    });
-  }
-
-  saveState();
-  document.getElementById("modalBank").classList.add("hidden");
-  renderAccountsView();
-  populateFilterSelects();
-  renderHome();
-  showToast(`${bank.name} conectado — movimientos importados`);
-}
 
 /* ===================== Add expense modal ===================== */
 
@@ -677,10 +619,8 @@ document.getElementById("formAdd").addEventListener("submit", (e) => {
   if (editingTxId) {
     const tx = state.transactions.find(t => t.id === editingTxId);
     if (tx) {
-      if (tx.source === "manual") {
-        const oldAcc = accountById(tx.accountId);
-        if (oldAcc) oldAcc.balance -= balanceDelta(tx);
-      }
+      const oldAcc = accountById(tx.accountId);
+      if (oldAcc) oldAcc.balance -= balanceDelta(tx);
       tx.amount = amount;
       tx.desc = desc;
       tx.categoryId = categoryId;
