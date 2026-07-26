@@ -338,11 +338,26 @@ function renderTrendChart() {
 }
 
 function dpr() { return window.devicePixelRatio || 1; }
+
+// canvas.width/height are "reflected" attributes: setting the property also
+// rewrites the height="..." HTML attribute. setupCanvasSize used to read that
+// same attribute back as the intended CSS height, so every re-render (scroll,
+// switching Hoy/Semana/Mes, any data change) multiplied the height by the
+// device pixel ratio again — 180 -> 540 -> 1620 -> ... — visibly wrecking the
+// charts. Cache each canvas's real intended height once, from its ORIGINAL
+// markup, and never trust the live attribute again.
+const canvasCssHeights = new WeakMap();
 function setupCanvasSize(canvas) {
-  const rect = canvas.getBoundingClientRect();
+  if (!canvasCssHeights.has(canvas)) {
+    canvasCssHeights.set(canvas, parseInt(canvas.getAttribute("height"), 10));
+  }
+  const cssHeight = canvasCssHeights.get(canvas);
+  const cssWidth = canvas.getBoundingClientRect().width;
   const ratio = dpr();
-  canvas.width = rect.width * ratio;
-  canvas.height = (canvas.height && canvas.getAttribute("height") ? parseInt(canvas.getAttribute("height")) : rect.height) * ratio;
+  canvas.style.width = cssWidth + "px";
+  canvas.style.height = cssHeight + "px";
+  canvas.width = Math.round(cssWidth * ratio);
+  canvas.height = Math.round(cssHeight * ratio);
   const ctx = canvas.getContext("2d");
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
 }
