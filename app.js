@@ -447,12 +447,22 @@ document.getElementById("formSaveHistory").addEventListener("submit", (e) => {
   }
 
   const matching = state.transactions.filter(t => t.date >= startDate && t.date <= endDate);
+  // Freeze the same Ingresos/Egresos/Saldo figures shown on the home screen for
+  // this interval, instead of deriving different numbers later from the copied
+  // transactions alone — Ingresos there is total account balance, not a sum of
+  // "income"-type transactions, so recomputing it from the snapshot would give
+  // a different (usually $0) number and make it look like nothing was saved.
+  const income = state.accounts.reduce((s, a) => s + a.balance, 0);
+  const expense = matching.filter(t => t.type !== "income").reduce((s, t) => s + t.amount, 0);
   state.history.push({
     id: uid(),
     name,
     startDate,
     endDate,
     savedAt: todayISO(),
+    income,
+    expense,
+    balance: income - expense,
     transactions: JSON.parse(JSON.stringify(matching)),
   });
   saveState();
@@ -467,12 +477,15 @@ function openViewHistoryModal(id) {
   document.getElementById("viewHistoryTitle").textContent = h.name;
   document.getElementById("viewHistoryRange").textContent = `${h.startDate} → ${h.endDate} · ${h.transactions.length} movimientos`;
 
-  const income = h.transactions.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0);
-  const expense = h.transactions.filter(t => t.type !== "income").reduce((s, t) => s + t.amount, 0);
+  // Older saved entries (before this field existed) fall back to deriving
+  // from the copied transactions, since they never had the real figures stored.
+  const hasStoredTotals = typeof h.income === "number";
+  const income = hasStoredTotals ? h.income : h.transactions.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0);
+  const expense = hasStoredTotals ? h.expense : h.transactions.filter(t => t.type !== "income").reduce((s, t) => s + t.amount, 0);
+  const net = hasStoredTotals ? h.balance : income - expense;
   document.getElementById("histIncome").textContent = fmtMoney(income);
   document.getElementById("histExpense").textContent = fmtMoney(expense);
   const histBalanceEl = document.getElementById("histBalance");
-  const net = income - expense;
   histBalanceEl.textContent = fmtMoney(net);
   histBalanceEl.style.color = net < 0 ? "var(--danger)" : "var(--safe)";
 
