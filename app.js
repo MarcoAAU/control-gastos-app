@@ -41,6 +41,30 @@ function fmtMoney(n) {
   return sign + "$" + Math.abs(Math.round(n)).toLocaleString("es-CO");
 }
 
+// Live thousands-separator formatting for plain-number text inputs (type="number"
+// inputs can't show "1.000.000" while typing, so these use type="text" instead).
+function attachThousandsInput(input, allowNegative) {
+  input.addEventListener("input", () => {
+    const raw = input.value;
+    const negative = !!allowNegative && raw.trim().startsWith("-");
+    const digits = raw.replace(/\D/g, "");
+    input.value = digits ? (negative ? "-" : "") + parseInt(digits, 10).toLocaleString("es-CO") : (negative ? "-" : "");
+  });
+}
+
+function getNumericInputValue(input) {
+  const raw = input.value;
+  const negative = raw.trim().startsWith("-");
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return NaN;
+  const n = parseInt(digits, 10);
+  return negative ? -n : n;
+}
+
+function setNumericInputValue(input, value) {
+  input.value = Number.isFinite(value) ? Math.round(value).toLocaleString("es-CO") : "";
+}
+
 /* ===================== Storage ===================== */
 
 function loadState() {
@@ -133,6 +157,7 @@ function makeDemoState() {
 let state = loadState() || { accounts: [], transactions: [] };
 if (!loadState()) saveState();
 state.transactions.forEach(t => { t.type = t.type || "expense"; });
+state.history = state.history || [];
 
 /* ===================== Helpers ===================== */
 
@@ -207,6 +232,7 @@ function renderHome() {
   renderCategoryChart(current.filter(t => t.type !== "income"));
   renderTrendChart();
   renderRecentList(current);
+  renderHistoryList();
 }
 
 function renderAccountsRow() {
@@ -361,6 +387,93 @@ function renderRecentList(currentPeriodTx) {
   list.innerHTML = sorted.map(t => txItemHTML(t, false)).join("");
 }
 
+/* ===================== Saved history ===================== */
+
+function renderHistoryList() {
+  const container = document.getElementById("historyList");
+  const entries = state.history || [];
+  if (entries.length === 0) {
+    container.innerHTML = `<div class="empty-state">Aún no has guardado historial.</div>`;
+    return;
+  }
+  container.innerHTML = [...entries].sort((a, b) => b.savedAt.localeCompare(a.savedAt)).map(h => `
+    <div class="history-item" data-history-id="${h.id}">
+      <div>
+        <div class="hname">${escapeHTML(h.name)}</div>
+        <div class="hrange">${h.startDate} → ${h.endDate}</div>
+      </div>
+      <div class="hcount">${h.transactions.length} mov.</div>
+    </div>
+  `).join("");
+  container.querySelectorAll("[data-history-id]").forEach(el => {
+    el.addEventListener("click", () => openViewHistoryModal(el.getAttribute("data-history-id")));
+  });
+}
+
+document.getElementById("btnSaveHistory").addEventListener("click", () => {
+  document.getElementById("histName").value = "";
+  document.getElementById("histStart").value = todayISO();
+  document.getElementById("histEnd").value = todayISO();
+  document.getElementById("modalSaveHistory").classList.remove("hidden");
+});
+document.getElementById("btnCancelSaveHistory").addEventListener("click", () => {
+  document.getElementById("modalSaveHistory").classList.add("hidden");
+});
+
+document.getElementById("formSaveHistory").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const name = document.getElementById("histName").value.trim();
+  const startDate = document.getElementById("histStart").value;
+  const endDate = document.getElementById("histEnd").value;
+  if (!name || !startDate || !endDate) return;
+  if (startDate > endDate) {
+    showToast("La fecha 'Desde' debe ser anterior o igual a 'Hasta'");
+    return;
+  }
+
+  const matching = state.transactions.filter(t => t.date >= startDate && t.date <= endDate);
+  state.history.push({
+    id: uid(),
+    name,
+    startDate,
+    endDate,
+    savedAt: todayISO(),
+    transactions: JSON.parse(JSON.stringify(matching)),
+  });
+  saveState();
+  document.getElementById("modalSaveHistory").classList.add("hidden");
+  renderHistoryList();
+  showToast(`Historial "${name}" guardado (${matching.length} movimientos)`);
+});
+
+function openViewHistoryModal(id) {
+  const h = state.history.find(x => x.id === id);
+  if (!h) return;
+  document.getElementById("viewHistoryTitle").textContent = h.name;
+  document.getElementById("viewHistoryRange").textContent = `${h.startDate} → ${h.endDate} · ${h.transactions.length} movimientos`;
+  const list = document.getElementById("viewHistoryList");
+  if (h.transactions.length === 0) {
+    list.innerHTML = `<div class="empty-state">No hay movimientos en este rango.</div>`;
+  } else {
+    list.innerHTML = [...h.transactions].sort((a, b) => b.date.localeCompare(a.date)).map(t => txItemHTML(t, false)).join("");
+  }
+  document.getElementById("modalViewHistory").dataset.historyId = id;
+  document.getElementById("modalViewHistory").classList.remove("hidden");
+}
+document.getElementById("btnCloseViewHistory").addEventListener("click", () => {
+  document.getElementById("modalViewHistory").classList.add("hidden");
+});
+document.getElementById("btnDeleteHistory").addEventListener("click", () => {
+  const id = document.getElementById("modalViewHistory").dataset.historyId;
+  showConfirm("¿Eliminar este historial guardado? Los movimientos originales no se ven afectados.", () => {
+    state.history = state.history.filter(h => h.id !== id);
+    saveState();
+    document.getElementById("modalViewHistory").classList.add("hidden");
+    renderHistoryList();
+    showToast("Historial eliminado");
+  });
+});
+
 /* ===================== Transactions view ===================== */
 
 function populateFilterSelects() {
@@ -505,7 +618,7 @@ document.getElementById("formCustomAccount").addEventListener("submit", (e) => {
   e.preventDefault();
   const name = document.getElementById("caName").value.trim();
   const type = document.getElementById("caType").value;
-  const balance = parseFloat(document.getElementById("caBalance").value);
+  const balance = getNumericInputValue(document.getElementById("caBalance"));
   if (!name || isNaN(balance)) return;
 
   state.accounts.push({
@@ -532,7 +645,7 @@ function openEditBalanceModal(accountId) {
   const acc = accountById(accountId);
   if (!acc) return;
   document.getElementById("ebAccountName").textContent = `${acc.emoji} ${acc.nickname}`;
-  document.getElementById("ebBalance").value = acc.balance;
+  setNumericInputValue(document.getElementById("ebBalance"), acc.balance);
   document.getElementById("formEditBalance").dataset.accountId = accountId;
   document.getElementById("modalEditBalance").classList.remove("hidden");
 }
@@ -541,7 +654,7 @@ document.getElementById("formEditBalance").addEventListener("submit", (e) => {
   e.preventDefault();
   const accountId = document.getElementById("formEditBalance").dataset.accountId;
   const acc = accountById(accountId);
-  const newBalance = parseFloat(document.getElementById("ebBalance").value);
+  const newBalance = getNumericInputValue(document.getElementById("ebBalance"));
   if (!acc || isNaN(newBalance)) return;
 
   acc.balance = newBalance;
@@ -576,7 +689,7 @@ function populateAddForm(tx) {
 
   if (tx) {
     document.getElementById("addModalTitle").textContent = type === "income" ? "Editar ingreso" : "Editar gasto";
-    document.getElementById("fAmount").value = tx.amount;
+    setNumericInputValue(document.getElementById("fAmount"), tx.amount);
     document.getElementById("fDesc").value = tx.desc;
     document.getElementById("fCategory").value = tx.categoryId;
     document.getElementById("fAccount").value = tx.accountId;
@@ -608,7 +721,7 @@ function openEditTxModal(id) {
 
 document.getElementById("formAdd").addEventListener("submit", (e) => {
   e.preventDefault();
-  const amount = parseFloat(document.getElementById("fAmount").value);
+  const amount = getNumericInputValue(document.getElementById("fAmount"));
   const desc = document.getElementById("fDesc").value.trim();
   const categoryId = document.getElementById("fCategory").value;
   const accountId = document.getElementById("fAccount").value;
@@ -697,6 +810,7 @@ document.getElementById("filterAccount").addEventListener("change", renderAllTx)
 document.getElementById("btnResetDemo").addEventListener("click", () => {
   showConfirm("Esto reemplazará tus datos actuales con datos de demostración nuevos. ¿Continuar?", () => {
     state = makeDemoState();
+    state.history = [];
     saveState();
     populateFilterSelects();
     renderHome();
@@ -706,8 +820,8 @@ document.getElementById("btnResetDemo").addEventListener("click", () => {
   });
 });
 document.getElementById("btnClearAll").addEventListener("click", () => {
-  showConfirm("Esto borrará TODOS tus datos (cuentas y movimientos). ¿Continuar?", () => {
-    state = { accounts: [], transactions: [] };
+  showConfirm("Esto borrará TODOS tus datos (cuentas, movimientos e historial guardado). ¿Continuar?", () => {
+    state = { accounts: [], transactions: [], history: [] };
     saveState();
     populateFilterSelects();
     renderHome();
@@ -746,6 +860,10 @@ function showToast(msg) {
 /* ===================== Init ===================== */
 
 function init() {
+  attachThousandsInput(document.getElementById("fAmount"), false);
+  attachThousandsInput(document.getElementById("caBalance"), true);
+  attachThousandsInput(document.getElementById("ebBalance"), true);
+
   populateFilterSelects();
   renderHome();
 
@@ -753,7 +871,17 @@ function init() {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   }
 
-  window.addEventListener("resize", () => renderHome());
+  let lastResizeWidth = window.innerWidth;
+  let resizeTimer;
+  window.addEventListener("resize", () => {
+    // Mobile browsers fire "resize" when the address bar hides/shows during scroll,
+    // which changes innerHeight but not innerWidth — ignore those so charts don't
+    // get wiped and redrawn (canvas.width reset) on every scroll tick.
+    if (window.innerWidth === lastResizeWidth) return;
+    lastResizeWidth = window.innerWidth;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => renderHome(), 200);
+  });
 }
 
 init();

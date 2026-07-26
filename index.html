@@ -69,6 +69,12 @@
       </div>
       <div id="recentList" class="tx-list"></div>
 
+      <div class="section-header">
+        <h2>Historial guardado</h2>
+        <button class="link-btn" id="btnSaveHistory">+ Guardar</button>
+      </div>
+      <div id="historyList" class="history-list"></div>
+
     </section>
 
     <!-- TRANSACTIONS VIEW -->
@@ -138,7 +144,7 @@
     <input type="hidden" id="fType" value="expense">
     <form id="formAdd">
       <label>Monto
-        <input type="number" id="fAmount" step="0.01" min="0.01" placeholder="0.00" required>
+        <input type="text" inputmode="numeric" id="fAmount" placeholder="0" required>
       </label>
       <label>Descripción
         <input type="text" id="fDesc" placeholder="Ej. Supermercado" required>
@@ -191,7 +197,7 @@
         </select>
       </label>
       <label>Saldo actual
-        <input type="number" id="caBalance" step="0.01" placeholder="0.00" required>
+        <input type="text" inputmode="decimal" id="caBalance" placeholder="0" required>
       </label>
       <div class="modal-actions">
         <button type="button" class="secondary-btn" id="btnCancelCustomAccount">Cancelar</button>
@@ -209,13 +215,51 @@
     <p class="modal-hint" id="ebAccountName"></p>
     <form id="formEditBalance">
       <label>Saldo real actual
-        <input type="number" id="ebBalance" step="0.01" required>
+        <input type="text" inputmode="decimal" id="ebBalance" required>
       </label>
       <div class="modal-actions">
         <button type="button" class="secondary-btn" id="btnCancelEditBalance">Cancelar</button>
         <button type="submit" class="primary-btn">Guardar</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- Save History Modal -->
+<div id="modalSaveHistory" class="modal-overlay hidden">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h2>Guardar historial</h2>
+    <p class="modal-hint">Guarda una copia con nombre de los movimientos entre dos fechas, para consultarla después.</p>
+    <form id="formSaveHistory">
+      <label>Nombre
+        <input type="text" id="histName" placeholder="Ej. Enero 2026" required>
+      </label>
+      <label>Desde
+        <input type="date" id="histStart" required>
+      </label>
+      <label>Hasta
+        <input type="date" id="histEnd" required>
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="secondary-btn" id="btnCancelSaveHistory">Cancelar</button>
+        <button type="submit" class="primary-btn">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- View History Modal -->
+<div id="modalViewHistory" class="modal-overlay hidden">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h2 id="viewHistoryTitle">Historial</h2>
+    <p class="modal-hint" id="viewHistoryRange"></p>
+    <div id="viewHistoryList" class="tx-list"></div>
+    <div class="modal-actions">
+      <button type="button" class="secondary-btn danger-btn" id="btnDeleteHistory">Eliminar historial</button>
+      <button type="button" class="primary-btn" id="btnCloseViewHistory">Cerrar</button>
+    </div>
   </div>
 </div>
 
