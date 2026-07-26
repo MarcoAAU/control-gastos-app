@@ -451,6 +451,16 @@ function openViewHistoryModal(id) {
   if (!h) return;
   document.getElementById("viewHistoryTitle").textContent = h.name;
   document.getElementById("viewHistoryRange").textContent = `${h.startDate} → ${h.endDate} · ${h.transactions.length} movimientos`;
+
+  const income = h.transactions.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0);
+  const expense = h.transactions.filter(t => t.type !== "income").reduce((s, t) => s + t.amount, 0);
+  document.getElementById("histIncome").textContent = fmtMoney(income);
+  document.getElementById("histExpense").textContent = fmtMoney(expense);
+  const histBalanceEl = document.getElementById("histBalance");
+  const net = income - expense;
+  histBalanceEl.textContent = fmtMoney(net);
+  histBalanceEl.style.color = net < 0 ? "var(--danger)" : "var(--safe)";
+
   const list = document.getElementById("viewHistoryList");
   if (h.transactions.length === 0) {
     list.innerHTML = `<div class="empty-state">No hay movimientos en este rango.</div>`;
