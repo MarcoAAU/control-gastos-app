@@ -827,6 +827,20 @@ document.getElementById("btnViewAll").addEventListener("click", () => switchView
 
 document.getElementById("btnSettings").addEventListener("click", () => switchView("settings"));
 
+document.getElementById("btnRefresh").addEventListener("click", async () => {
+  // While online, clear cached app files so the reload picks up the latest
+  // version instead of the service worker's stale-while-revalidate copy
+  // (which otherwise needs a second manual reload to show up). Skip that
+  // while offline so we never wipe the only copy the app can load from.
+  if (navigator.onLine && "caches" in window) {
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    } catch (e) { /* ignore and reload anyway */ }
+  }
+  window.location.reload();
+});
+
 document.getElementById("btnAdd").addEventListener("click", () => {
   editingTxId = null;
   populateAddForm();

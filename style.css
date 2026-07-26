@@ -50,6 +50,7 @@ html, body {
 .topbar-title { display: flex; align-items: center; gap: 8px; }
 .topbar-title h1 { font-size: 18px; margin: 0; font-weight: 700; }
 .logo { font-size: 20px; }
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
 
 .icon-btn {
   background: var(--surface);
