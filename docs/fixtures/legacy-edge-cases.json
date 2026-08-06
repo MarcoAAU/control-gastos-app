@@ -1,0 +1,183 @@
+{
+  "accounts": [
+    {
+      "id": "acc_sin_movimientos",
+      "bankId": "davivienda",
+      "bankName": "Davivienda",
+      "type": "Cuenta de ahorros",
+      "nickname": "Cuenta nueva",
+      "balance": 500000,
+      "emoji": "🏛️"
+    },
+    {
+      "id": "acc_negativo",
+      "bankId": "nu",
+      "bankName": "Nu",
+      "type": "Tarjeta de crédito",
+      "nickname": "Tarjeta",
+      "balance": -1250000,
+      "emoji": "💜"
+    },
+    {
+      "id": "acc_manual",
+      "bankId": "manual",
+      "bankName": "Scotiabank Colpatria",
+      "type": "Cuenta corriente",
+      "nickname": "Scotiabank Colpatria",
+      "balance": 875000,
+      "emoji": "🏦"
+    },
+    {
+      "id": "acc_tipo_desconocido",
+      "bankId": "manual",
+      "bankName": "Cripto",
+      "type": "Billetera digital",
+      "nickname": "Cripto",
+      "balance": 300000,
+      "emoji": "🪙"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "tx_sin_type",
+      "date": "2026-07-05",
+      "amount": 45000,
+      "desc": "Movimiento antiguo sin campo type",
+      "categoryId": "comida",
+      "accountId": "acc_negativo",
+      "source": "bank"
+    },
+    {
+      "id": "tx_cuenta_huerfana",
+      "date": "2026-07-06",
+      "amount": 78000,
+      "desc": "Movimiento de una cuenta ya eliminada",
+      "categoryId": "transporte",
+      "accountId": "acc_que_ya_no_existe",
+      "source": "manual",
+      "type": "expense"
+    },
+    {
+      "id": "tx_categoria_desconocida",
+      "date": "2026-07-07",
+      "amount": 33000,
+      "desc": "Categoria inventada",
+      "categoryId": "categoria_que_no_existe",
+      "accountId": "acc_manual",
+      "source": "manual",
+      "type": "expense"
+    },
+    {
+      "id": "tx_amount_cero",
+      "date": "2026-07-08",
+      "amount": 0,
+      "desc": "Monto cero (invalido)",
+      "categoryId": "otros",
+      "accountId": "acc_manual",
+      "source": "manual",
+      "type": "expense"
+    },
+    {
+      "id": "tx_amount_negativo",
+      "date": "2026-07-08",
+      "amount": -5000,
+      "desc": "Monto negativo (invalido)",
+      "categoryId": "otros",
+      "accountId": "acc_manual",
+      "source": "manual",
+      "type": "expense"
+    },
+    {
+      "id": "tx_amount_null",
+      "date": "2026-07-09",
+      "amount": null,
+      "desc": "Monto nulo (invalido)",
+      "categoryId": "otros",
+      "accountId": "acc_manual",
+      "source": "manual",
+      "type": "expense"
+    },
+    {
+      "id": "tx_amount_texto",
+      "date": "2026-07-09",
+      "amount": "no soy un numero",
+      "desc": "Monto texto (invalido)",
+      "categoryId": "otros",
+      "accountId": "acc_manual",
+      "source": "manual",
+      "type": "expense"
+    },
+    {
+      "id": "tx_ingreso_valido",
+      "date": "2026-07-11",
+      "amount": 1200000,
+      "desc": "Ingreso valido en cuenta manual",
+      "categoryId": "salario",
+      "accountId": "acc_manual",
+      "source": "manual",
+      "type": "income"
+    },
+    {
+      "id": "tx_gasto_valido",
+      "date": "2026-07-12",
+      "amount": 66000,
+      "desc": "Gasto valido en cuenta manual",
+      "categoryId": "salud",
+      "accountId": "acc_manual",
+      "source": "manual",
+      "type": "expense"
+    },
+    {
+      "id": "tx_sin_desc",
+      "date": "2026-07-13",
+      "amount": 15000,
+      "desc": "",
+      "categoryId": "otros",
+      "accountId": "acc_tipo_desconocido",
+      "source": "manual",
+      "type": "expense"
+    },
+    {
+      "id": "tx_desc_con_html",
+      "date": "2026-07-14",
+      "amount": 20000,
+      "desc": "<img src=x onerror=alert(1)>",
+      "categoryId": "otros",
+      "accountId": "acc_tipo_desconocido",
+      "source": "manual",
+      "type": "expense"
+    }
+  ],
+  "history": [
+    {
+      "id": "hist_sin_totales",
+      "name": "Snapshot antiguo sin totales",
+      "startDate": "2026-06-01",
+      "endDate": "2026-06-30",
+      "savedAt": "2026-06-30",
+      "transactions": [
+        {
+          "id": "tx_old_001",
+          "date": "2026-06-15",
+          "amount": 50000,
+          "desc": "Gasto de junio",
+          "categoryId": "comida",
+          "accountId": "acc_negativo",
+          "source": "manual",
+          "type": "expense"
+        }
+      ]
+    },
+    {
+      "id": "hist_income_mal_rotulado",
+      "name": "Snapshot con Ingresos = saldo total",
+      "startDate": "2026-05-01",
+      "endDate": "2026-05-31",
+      "savedAt": "2026-05-31",
+      "income": 425000,
+      "expense": 180000,
+      "balance": 245000,
+      "transactions": []
+    }
+  ]
+}
