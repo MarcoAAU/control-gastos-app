@@ -93,6 +93,8 @@ Inventario **completo** del comportamiento observable de la app v1 (tag `v1-vani
 
 **Nota 3 — ítem 40.** v1 tuvo un bug donde el alto del `<canvas>` se multiplicaba por el `devicePixelRatio` en cada redibujo (180 → 540 → 1620 →…), deformando las gráficas al scrollear o cambiar de pestaña; corregido en `0b771a1`. En v2 el problema desaparece por construcción al usar Recharts (SVG en vez de Canvas).
 
+**Nota 4 — cambio cromático deliberado (transversal, no es un ítem).** El texto sobre el color primario pasa de blanco a azul muy oscuro (`#0a1338`). En v1 el par blanco/`#6c8dff` daba 3.05:1 de contraste, por debajo del mínimo AA de 4.5:1. El acento `#6c8dff` no cambia. Ver ADR-012. Afecta al botón principal, al FAB y a las pestañas activas: si al revisar la app "el texto de los botones azules se ve oscuro", es intencional.
+
 ## Invariante que NO estaba en v1 pero es criterio de aceptación en v2
 
 | # | Comportamiento | Fase 15 | Fase 20 |

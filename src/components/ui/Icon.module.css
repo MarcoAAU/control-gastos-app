@@ -1,0 +1,18 @@
+.root {
+  /* Un icono nunca debe encogerse dentro de un flex row: si lo hace, el
+     glifo se deforma. Bug clásico en listas con texto largo. */
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Fallback para los emojis heredados de v1 ("🍔", "🏦"): se renderizan como
+   texto, no como SVG. Ver ADR-011. */
+.emoji {
+  font-style: normal;
+  /* Los emojis tienen métricas verticales propias; el centrado por flex
+     evita el desalineado de 1-2px respecto a los iconos SVG vecinos. */
+  user-select: none;
+}

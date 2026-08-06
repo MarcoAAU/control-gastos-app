@@ -1,0 +1,96 @@
+/**
+ * Reset mínimo y opinado.
+ *
+ * No usamos normalize.css: sólo neutralizamos lo que realmente estorba en una
+ * app móvil instalable. Cada regla tiene una razón, no es copia-pega.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Los márgenes por defecto de los navegadores obligan a resetearlos en cada
+   componente. Se eliminan una sola vez aquí (DRY). */
+body,
+h1,
+h2,
+h3,
+h4,
+p,
+figure,
+blockquote,
+dl,
+dd {
+  margin: 0;
+}
+
+ul[role='list'],
+ol[role='list'] {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  /* Evita que iOS agrande el texto al rotar el dispositivo. */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  line-height: var(--line-height-body);
+  text-rendering: optimizeSpeed;
+  -webkit-font-smoothing: antialiased;
+}
+
+img,
+picture,
+svg,
+video {
+  max-width: 100%;
+  display: block;
+}
+
+/* Los controles de formulario no heredan la tipografía por defecto. */
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Anillo de foco visible y consistente en toda la app. Sólo para navegación
+   por teclado: :focus-visible no se dispara con toques ni clics. */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--shape-xs);
+}
+
+/* Accesibilidad: respetar la preferencia del sistema de movimiento reducido.
+   Requisito de la Fase 18, adelantado aquí porque cuesta 6 líneas. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

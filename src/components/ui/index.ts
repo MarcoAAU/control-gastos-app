@@ -1,0 +1,25 @@
+/**
+ * Punto de importación único de los primitivos de UI.
+ *
+ * Permite `import { Button, Card } from '@/components/ui'` en vez de tres
+ * líneas de import por archivo. Se irá ampliando: Sheet/Modal/Toast en la
+ * Fase 6, TextField/AmountField/Select en la 7, Color/IconPicker en la 11.
+ */
+
+export { Button } from './Button';
+export type { ButtonProps, ButtonSize, ButtonVariant } from './Button';
+
+export { IconButton } from './IconButton';
+export type { IconButtonProps, IconButtonSize, IconButtonVariant } from './IconButton';
+
+export { Card } from './Card';
+export type { CardPadding, CardProps, CardVariant } from './Card';
+
+export { Icon } from './Icon';
+export type { IconProps, IconSize } from './Icon';
+
+export { Skeleton } from './Skeleton';
+export type { SkeletonProps, SkeletonVariant } from './Skeleton';
+
+export { EmptyState } from './EmptyState';
+export type { EmptyStateProps } from './EmptyState';

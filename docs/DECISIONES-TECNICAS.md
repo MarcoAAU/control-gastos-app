@@ -174,6 +174,20 @@ Ninguna fase se da por cerrada si esa cadena no pasa limpia.
 
 ---
 
+## ADR-012 — Texto oscuro sobre el color primario (contraste AA)
+
+**Contexto.** v1 pintaba texto blanco sobre el acento `#6c8dff` (`.primary-btn`, `.period-tab.active`, `.type-btn.active`, `.fab`). Ese par da **3.05:1** de contraste, por debajo del mínimo WCAG AA de 4.5:1 para texto normal. Es el único incumplimiento de contraste de la paleta heredada: todos los demás pares (texto atenuado, verde de ingresos, rojo de gastos) superan 6:1.
+
+**Decisión.** En tema oscuro, `--color-on-primary` es `#0a1338` (azul muy oscuro) en lugar de blanco → **5.92:1**. El color primario no cambia: `#6c8dff` sigue siendo el acento que el usuario reconoce.
+
+**Por qué esto y no oscurecer el acento.** Oscurecer `#6c8dff` lo suficiente para que el blanco pasara AA lo convertiría en un azul distinto y cambiaría la identidad visual de la app. Invertir el contenido conserva el color de marca y además es lo que Material Design 3 prescribe: en un esquema oscuro el primario es un tono claro y su contenido va oscuro. En tema claro ocurre lo contrario y `--color-on-primary` sí es blanco sobre `#3a5bd9` (5.71:1).
+
+**Consecuencia visible.** El texto de los botones principales pasa de blanco a azul muy oscuro. Es el único cambio cromático deliberado respecto a v1 y está anotado en `CHECKLIST-REGRESION.md` como reemplazo intencional, no como regresión.
+
+**Verificación.** Auditoría automática sobre el kitchensink: 121 elementos con texto medidos contra su fondo efectivo, en ambos temas, 0 incumplimientos (peor caso normalizado 5.92 en oscuro, 5.07 en claro).
+
+---
+
 ## Decisiones pendientes (se resolverán en su fase)
 
 | Tema | Fase | Nota |

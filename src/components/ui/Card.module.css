@@ -1,0 +1,89 @@
+.root {
+  border-radius: var(--shape-lg);
+  /* Necesario para que los hijos con fondo (cabeceras, filas) no desborden
+     las esquinas redondeadas. */
+  overflow: hidden;
+}
+
+/* ── Variantes ─────────────────────────────────────────────────────────── */
+/* filled: la tarjeta por defecto. Es el `.tx-item` / `.account-card` de v1. */
+.filled {
+  background: var(--color-surface-container);
+  border: 1px solid var(--color-outline);
+}
+
+/* outlined: sin peso visual, para agrupar sin competir con el contenido. */
+.outlined {
+  background: transparent;
+  border: 1px solid var(--color-outline);
+}
+
+/* elevated: destaca sobre el resto (resumen financiero, tarjeta activa).
+   Porta el degradado sutil de `.stat-tile` de v1. */
+.elevated {
+  background: linear-gradient(
+    145deg,
+    var(--color-surface-container-high),
+    var(--color-surface-container)
+  );
+  border: 1px solid var(--color-outline);
+  box-shadow: var(--elevation-1);
+}
+
+/* ── Relleno ───────────────────────────────────────────────────────────── */
+.padNone {
+  padding: 0;
+}
+
+.padSm {
+  padding: var(--space-3);
+}
+
+.padMd {
+  padding: var(--space-4);
+}
+
+.padLg {
+  padding: var(--space-5);
+}
+
+/* ── Versión pulsable ──────────────────────────────────────────────────── */
+/* Se renderiza como <button> real (no un div con onClick): así funciona con
+   teclado, con lector de pantalla y con el foco, gratis. */
+.interactive {
+  position: relative;
+  display: block;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  transition: transform var(--motion-duration-instant) var(--motion-easing-standard);
+}
+
+.interactive::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-duration-short) var(--motion-easing-standard);
+}
+
+@media (hover: hover) {
+  .interactive:hover:not(:disabled)::after {
+    opacity: var(--state-hover-opacity);
+  }
+}
+
+.interactive:active:not(:disabled)::after {
+  opacity: var(--state-pressed-opacity);
+}
+
+.interactive:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.interactive:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}

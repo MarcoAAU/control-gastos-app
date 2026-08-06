@@ -1,0 +1,106 @@
+/**
+ * Design tokens — todo lo que NO depende del tema.
+ *
+ * Los roles de color viven en styles/themes/{dark,light}.css porque son lo
+ * único que cambia entre temas. Aquí están forma, espacio, tipografía,
+ * elevación, movimiento y layout: idénticos en claro y oscuro.
+ *
+ * Regla de gobierno (ADR-011): un token SEMÁNTICO sólo se añade cuando un
+ * segundo componente lo necesita; un valor usado en un único sitio se queda
+ * en el CSS Module de ese componente. Las ESCALAS (espacio, tipografía,
+ * forma, z-index) son la excepción: se declaran completas porque su utilidad
+ * está en la proporción, y un hueco obliga a inventar valores sueltos — que
+ * es justo lo que se quiere evitar.
+ */
+
+:root {
+  /* ── Forma ───────────────────────────────────────────────────────────── */
+  /* Portados de v1: --radius: 16px era el radio de tarjeta; el resto de la
+     escala se deduce de los valores que ya usaba style.css (10/12/20px). */
+  --shape-xs: 8px;
+  --shape-sm: 10px;
+  --shape-md: 12px;
+  --shape-lg: 16px;
+  --shape-xl: 20px;
+  --shape-full: 999px;
+
+  /* ── Espacio (escala de 4px) ─────────────────────────────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* ── Tipografía ──────────────────────────────────────────────────────── */
+  --font-family-base:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+  --font-size-display: 32px;
+  --font-size-headline: 24px;
+  --font-size-title-lg: 18px;
+  --font-size-title: 16px;
+  --font-size-title-sm: 15px;
+  --font-size-body: 14px;
+  --font-size-body-sm: 13px;
+  --font-size-label: 12px;
+  --font-size-label-sm: 11px;
+  --font-size-caption: 10px;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-black: 800;
+
+  --line-height-tight: 1.2;
+  --line-height-body: 1.45;
+  --line-height-relaxed: 1.6;
+
+  --letter-spacing-tight: -0.3px;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.2px;
+
+  /* ── Elevación (MD3: sombra suave, no la sombra dura de Material 2) ──── */
+  --elevation-0: none;
+  --elevation-1: 0 1px 2px rgb(0 0 0 / 30%), 0 1px 3px 1px rgb(0 0 0 / 15%);
+  --elevation-2: 0 1px 2px rgb(0 0 0 / 30%), 0 2px 6px 2px rgb(0 0 0 / 15%);
+  --elevation-3: 0 4px 8px 3px rgb(0 0 0 / 15%), 0 1px 3px rgb(0 0 0 / 30%);
+
+  /* ── Movimiento (curvas MD3 "expressive") ────────────────────────────── */
+  --motion-duration-instant: 100ms;
+  --motion-duration-short: 150ms;
+  --motion-duration-medium: 250ms;
+  --motion-duration-long: 400ms;
+
+  --motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --motion-easing-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --motion-easing-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+
+  /* ── Capas de estado (MD3: opacidad sobre el color de contenido) ─────── */
+  --state-hover-opacity: 0.08;
+  --state-focus-opacity: 0.1;
+  --state-pressed-opacity: 0.12;
+
+  /* ── Layout ──────────────────────────────────────────────────────────── */
+  /* 480px viene de v1 (#app tenía max-width: 480px): la app se diseñó para
+     móvil y se centra en pantallas grandes en vez de estirarse. */
+  --layout-max-width: 480px;
+  --layout-nav-height: 64px;
+  --layout-topbar-height: 56px;
+  --layout-gutter: 16px;
+  /* Altura mínima de blanco táctil (MD3 / WCAG 2.5.8). v1 usaba 38px, por
+     debajo del mínimo; los primitivos la garantizan con un pseudo-elemento. */
+  --layout-touch-target: 48px;
+
+  /* ── Orden de apilado (centralizado: evita la guerra de z-index) ─────── */
+  --z-base: 1;
+  --z-sticky: 10;
+  --z-nav: 20;
+  --z-fab: 25;
+  --z-scrim: 50;
+  --z-sheet: 51;
+  --z-toast: 60;
+}

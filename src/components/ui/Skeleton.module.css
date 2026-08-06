@@ -1,0 +1,63 @@
+/**
+ * Placeholder de carga.
+ *
+ * Existe porque la hidratación desde localStorage + migración puede tardar
+ * unos cientos de milisegundos en un móvil modesto, y una pantalla en blanco
+ * se percibe como un cuelgue.
+ */
+
+.root {
+  background: var(--color-skeleton-base);
+  /* El brillo se anima con background-position (compuesto por la GPU) en vez
+     de con `left`, que provocaría reflow en cada frame. */
+  background-image: linear-gradient(
+    90deg,
+    var(--color-skeleton-base) 0%,
+    var(--color-skeleton-shine) 50%,
+    var(--color-skeleton-base) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Con movimiento reducido el reset global ya congela la animación; aquí se
+   deja además un gris plano para que no quede un degradado a medias. */
+@media (prefers-reduced-motion: reduce) {
+  .root {
+    background-image: none;
+  }
+}
+
+.text {
+  border-radius: var(--shape-xs);
+  height: 1em;
+}
+
+.rect {
+  border-radius: var(--shape-md);
+}
+
+.circle {
+  border-radius: var(--shape-full);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* La última línea de un bloque de texto real casi nunca llega al borde. */
+.group > .root:last-child:not(:only-child) {
+  width: 60%;
+}

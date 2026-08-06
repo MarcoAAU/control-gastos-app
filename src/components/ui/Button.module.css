@@ -1,0 +1,172 @@
+/**
+ * Botón MD3.
+ *
+ * Estructura de capas (importante para no romperlo al editar):
+ *   .root         → caja, color de fondo y de texto según variante
+ *   .root::after  → CAPA DE ESTADO (hover/press): currentColor con opacidad
+ *   .root::before → EXPANSOR DE BLANCO TÁCTIL invisible hasta 48px
+ *
+ * Nada de `overflow: hidden` en .root: la capa de estado se recorta sola con
+ * `border-radius: inherit`, y el expansor táctil NECESITA desbordar.
+ */
+
+.root {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border-radius: var(--shape-md);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-wide);
+  white-space: nowrap;
+  transition:
+    background-color var(--motion-duration-short) var(--motion-easing-standard),
+    border-color var(--motion-duration-short) var(--motion-easing-standard),
+    transform var(--motion-duration-instant) var(--motion-easing-standard);
+}
+
+/* Capa de estado MD3 */
+.root::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-duration-short) var(--motion-easing-standard);
+}
+
+/* `hover: hover` excluye móviles, donde :hover se queda "pegado" tras el
+   toque y deja el botón iluminado hasta que tocas otra cosa. */
+@media (hover: hover) {
+  .root:hover:not(:disabled)::after {
+    opacity: var(--state-hover-opacity);
+  }
+}
+
+.root:active:not(:disabled)::after {
+  opacity: var(--state-pressed-opacity);
+}
+
+/* Micro-hundido al pulsar: da sensación de respuesta física sin JS. */
+.root:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.root:disabled {
+  opacity: 0.38; /* Opacidad de estado deshabilitado de MD3 */
+  cursor: not-allowed;
+}
+
+/* ── Blanco táctil ─────────────────────────────────────────────────────── */
+/* WCAG 2.5.8 pide 24px como mínimo; MD3 pide 48. Los tamaños sm/md quedan por
+   debajo visualmente, así que se amplía el área sensible sin cambiar el
+   aspecto — exactamente el problema que tenía .icon-btn (38px) en v1. */
+.root::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: var(--layout-touch-target);
+  transform: translateY(-50%);
+}
+
+/* ── Tamaños ───────────────────────────────────────────────────────────── */
+.sm {
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  font-size: var(--font-size-body-sm);
+}
+
+.md {
+  min-height: 44px;
+  padding: 0 var(--space-5);
+  font-size: var(--font-size-body);
+}
+
+.lg {
+  min-height: 52px;
+  padding: 0 var(--space-6);
+  font-size: var(--font-size-title-sm);
+}
+
+/* ── Variantes ─────────────────────────────────────────────────────────── */
+/* filled: acción principal. Equivale a .primary-btn de v1. */
+.filled {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: var(--elevation-1);
+}
+
+/* tonal: acción secundaria con peso. Equivale a .secondary-btn de v1. */
+.tonal {
+  background: var(--color-surface-container-high);
+  color: var(--color-on-surface);
+  border: 1px solid var(--color-outline);
+}
+
+.outlined {
+  background: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-outline);
+}
+
+/* text: acciones terciarias (los .link-btn de v1). */
+.text {
+  background: transparent;
+  color: var(--color-primary);
+  padding-inline: var(--space-2);
+}
+
+/* danger: destructivas. Fondo lleno para que "Eliminar" no se confunda nunca
+   con una acción neutra — es irreversible. */
+.danger {
+  background: var(--color-error);
+  color: var(--color-on-error);
+  box-shadow: var(--elevation-1);
+}
+
+/* dangerText: destructiva de bajo énfasis (dentro de una lista, un menú). */
+.dangerText {
+  background: transparent;
+  color: var(--color-error);
+}
+
+/* ── Modificadores ─────────────────────────────────────────────────────── */
+.fullWidth {
+  width: 100%;
+}
+
+.label {
+  /* Necesario para que el texto quede por encima de la capa de estado. */
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Durante la carga el texto se mantiene en el flujo (invisible) para que el
+   botón no cambie de ancho y "salte" bajo el dedo del usuario. */
+.labelLoading {
+  visibility: hidden;
+}
+
+.spinner {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: var(--shape-full);
+  animation: spin 700ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

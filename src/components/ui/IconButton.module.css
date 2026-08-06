@@ -1,0 +1,103 @@
+/**
+ * Botón de sólo icono (topbar, cerrar hoja, acciones de fila).
+ *
+ * Sustituye a `.icon-btn` de v1, que medía 38×38px — por debajo del mínimo
+ * táctil accesible. Aquí el cuadro visible sigue siendo pequeño pero el área
+ * sensible se expande a 48×48 con ::before.
+ */
+
+.root {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--shape-full);
+  color: var(--color-on-surface);
+  transition:
+    background-color var(--motion-duration-short) var(--motion-easing-standard),
+    transform var(--motion-duration-instant) var(--motion-easing-standard);
+}
+
+.root::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-duration-short) var(--motion-easing-standard);
+}
+
+@media (hover: hover) {
+  .root:hover:not(:disabled)::after {
+    opacity: var(--state-hover-opacity);
+  }
+}
+
+.root:active:not(:disabled)::after {
+  opacity: var(--state-pressed-opacity);
+}
+
+.root:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.root:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+/* Blanco táctil mínimo, centrado y sin afectar al layout. */
+.root::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--layout-touch-target);
+  height: var(--layout-touch-target);
+  transform: translate(-50%, -50%);
+}
+
+/* ── Tamaños (caja visible) ────────────────────────────────────────────── */
+.sm {
+  width: 32px;
+  height: 32px;
+}
+
+.md {
+  width: 40px;
+  height: 40px;
+}
+
+.lg {
+  width: 48px;
+  height: 48px;
+}
+
+/* ── Variantes ─────────────────────────────────────────────────────────── */
+.standard {
+  background: transparent;
+}
+
+/* Equivalente al .icon-btn de v1 (fondo de superficie + borde). */
+.tonal {
+  background: var(--color-surface-container-high);
+  border: 1px solid var(--color-outline);
+  border-radius: var(--shape-md);
+}
+
+.filled {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.danger {
+  background: transparent;
+  color: var(--color-error);
+}
+
+.glyph {
+  position: relative;
+  z-index: 1;
+}

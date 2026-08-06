@@ -1,0 +1,61 @@
+/**
+ * Estado vacío.
+ *
+ * En v1 esto era un `<div class="empty-state">Sin movimientos</div>`: una línea
+ * gris que no dice qué hacer. Aquí el patrón es icono + qué pasa + qué hacer,
+ * con acción opcional — es la diferencia entre una app que parece rota y una
+ * que parece nueva.
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-5);
+}
+
+.compact {
+  padding: var(--space-5) var(--space-4);
+  gap: var(--space-2);
+}
+
+.iconWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--shape-full);
+  background: var(--color-surface-container-high);
+  color: var(--color-on-surface-variant);
+}
+
+.compact .iconWrap {
+  width: 40px;
+  height: 40px;
+}
+
+.title {
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-on-surface);
+}
+
+.compact .title {
+  font-size: var(--font-size-body);
+}
+
+.description {
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-on-surface-variant);
+  /* Una línea de texto centrada muy ancha es difícil de leer. */
+  max-width: 34ch;
+}
+
+.action {
+  margin-top: var(--space-2);
+}
