@@ -49,10 +49,9 @@ export function Overlay({
   children,
   footer,
 }: OverlayProps) {
-  const { mounted, state } = usePresence(open, EXIT_DURATION_MS);
+  const { mounted, exiting } = usePresence(open, EXIT_DURATION_MS);
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
-  const visible = state === 'entered';
 
   const isSheet = variant === 'sheet';
   const drag = useDragDismiss(onClose);
@@ -90,7 +89,7 @@ export function Overlay({
       className={cn(
         styles.scrim,
         isSheet ? styles.scrimSheet : styles.scrimModal,
-        visible && styles.scrimVisible,
+        exiting && styles.scrimExiting,
       )}
       onClick={dismissible ? onClose : undefined}
     >
@@ -103,7 +102,7 @@ export function Overlay({
         className={cn(
           styles.panel,
           isSheet ? styles.panelSheet : styles.panelModal,
-          visible && (isSheet ? styles.panelVisibleSheet : styles.panelVisibleModal),
+          exiting && (isSheet ? styles.panelSheetExiting : styles.panelModalExiting),
           drag.dragging && styles.panelDragging,
         )}
         style={panelStyle}
