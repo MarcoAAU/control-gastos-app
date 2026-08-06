@@ -23,3 +23,16 @@ export type { SkeletonProps, SkeletonVariant } from './Skeleton';
 
 export { EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
+
+// Overlays (Fase 6). `Overlay` NO se exporta a propósito: es la base interna
+// de los tres siguientes y nadie debe usarla directamente.
+export { Sheet } from './Sheet';
+export type { SheetProps } from './Sheet';
+
+export { Modal } from './Modal';
+export type { ModalProps } from './Modal';
+
+export { ConfirmDialog } from './ConfirmDialog';
+export type { ConfirmDialogProps } from './ConfirmDialog';
+
+export { ToastHost } from './ToastHost';

@@ -1,4 +1,7 @@
-/* eslint-disable no-restricted-globals -- ESTE es el único archivo autorizado. */
+// La excepción a la regla no-restricted-globals está declarada en
+// eslint.config.js, apuntando exactamente a este archivo. Que viva en la
+// configuración y no aquí lo hace la única fuente de verdad: no se puede
+// conceder la excepción a otro archivo escribiendo un comentario.
 
 import { StorageError, type StorageAdapter } from '../StorageAdapter';
 

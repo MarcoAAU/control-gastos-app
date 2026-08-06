@@ -5,7 +5,9 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'coverage'] },
+  // 'public' contiene scripts que corren en el Service Worker, no en la app:
+  // otro entorno global (self, caches) y otras reglas.
+  { ignores: ['dist', 'node_modules', 'coverage', 'public'] },
 
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
