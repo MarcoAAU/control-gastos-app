@@ -1,0 +1,147 @@
+{
+  "accounts": [
+    {
+      "id": "acc_bancolombia",
+      "bankId": "bancolombia",
+      "bankName": "Bancolombia",
+      "type": "Cuenta de ahorros",
+      "nickname": "Cuenta principal",
+      "balance": 3250000,
+      "emoji": "🏦"
+    },
+    {
+      "id": "acc_nu",
+      "bankId": "nu",
+      "bankName": "Nu",
+      "type": "Tarjeta de crédito",
+      "nickname": "Tarjeta Nu",
+      "balance": -420000,
+      "emoji": "💜"
+    },
+    {
+      "id": "acc_efectivo",
+      "bankId": "manual",
+      "bankName": "Manual",
+      "type": "Efectivo",
+      "nickname": "Efectivo",
+      "balance": 150000,
+      "emoji": "💵"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "tx_001",
+      "date": "2026-07-01",
+      "amount": 2400000,
+      "desc": "Salario",
+      "categoryId": "salario",
+      "accountId": "acc_bancolombia",
+      "source": "bank",
+      "type": "income"
+    },
+    {
+      "id": "tx_002",
+      "date": "2026-07-02",
+      "amount": 85000,
+      "desc": "Supermercado",
+      "categoryId": "comida",
+      "accountId": "acc_bancolombia",
+      "source": "manual",
+      "type": "expense"
+    },
+    {
+      "id": "tx_003",
+      "date": "2026-07-03",
+      "amount": 32000,
+      "desc": "Uber",
+      "categoryId": "transporte",
+      "accountId": "acc_nu",
+      "source": "manual",
+      "type": "expense"
+    },
+    {
+      "id": "tx_004",
+      "date": "2026-07-10",
+      "amount": 900000,
+      "desc": "Arriendo",
+      "categoryId": "vivienda",
+      "accountId": "acc_bancolombia",
+      "source": "manual",
+      "type": "expense"
+    },
+    {
+      "id": "tx_005",
+      "date": "2026-07-15",
+      "amount": 450000,
+      "desc": "Proyecto freelance",
+      "categoryId": "freelance",
+      "accountId": "acc_bancolombia",
+      "source": "bank",
+      "type": "income"
+    },
+    {
+      "id": "tx_006",
+      "date": "2026-07-18",
+      "amount": 25000,
+      "desc": "Café",
+      "categoryId": "comida",
+      "accountId": "acc_efectivo",
+      "source": "manual",
+      "type": "expense"
+    },
+    {
+      "id": "tx_007",
+      "date": "2026-07-20",
+      "amount": 120000,
+      "desc": "Ropa",
+      "categoryId": "compras",
+      "accountId": "acc_nu",
+      "source": "manual",
+      "type": "expense"
+    },
+    {
+      "id": "tx_008",
+      "date": "2026-07-22",
+      "amount": 150000,
+      "desc": "Internet",
+      "categoryId": "servicios",
+      "accountId": "acc_bancolombia",
+      "source": "manual",
+      "type": "expense"
+    }
+  ],
+  "history": [
+    {
+      "id": "hist_001",
+      "name": "Julio 2026",
+      "startDate": "2026-07-01",
+      "endDate": "2026-07-31",
+      "savedAt": "2026-07-31",
+      "income": 2980000,
+      "expense": 1312000,
+      "balance": 1668000,
+      "transactions": [
+        {
+          "id": "tx_002",
+          "date": "2026-07-02",
+          "amount": 85000,
+          "desc": "Supermercado",
+          "categoryId": "comida",
+          "accountId": "acc_bancolombia",
+          "source": "manual",
+          "type": "expense"
+        },
+        {
+          "id": "tx_004",
+          "date": "2026-07-10",
+          "amount": 900000,
+          "desc": "Arriendo",
+          "categoryId": "vivienda",
+          "accountId": "acc_bancolombia",
+          "source": "manual",
+          "type": "expense"
+        }
+      ]
+    }
+  ]
+}

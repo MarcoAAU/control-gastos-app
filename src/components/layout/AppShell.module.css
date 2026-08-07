@@ -1,0 +1,192 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  /* 100dvh evita el salto de la barra de direcciones en móvil, que en v1
+     provocaba que el contenido se recolocara al hacer scroll. */
+  min-height: 100dvh;
+  background: var(--color-surface);
+}
+
+/* ── Barra superior ────────────────────────────────────────────────────── */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: calc(env(safe-area-inset-top, 0px) + var(--space-3)) var(--space-4) var(--space-3);
+  background: var(--color-surface-translucent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-outline);
+}
+
+.topbarTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.topbarTitle h1 {
+  font-size: var(--font-size-title-lg);
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbarActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+/* ── Contenido ─────────────────────────────────────────────────────────── */
+.main {
+  flex: 1;
+  padding: var(--space-4) var(--layout-gutter);
+  /* Hueco para que la barra inferior y el FAB no tapen el último elemento
+     de una lista. */
+  padding-bottom: calc(var(--layout-nav-height) + var(--space-10) + env(safe-area-inset-bottom, 0px));
+}
+
+/* ── Barra inferior ────────────────────────────────────────────────────── */
+.bottomNav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--layout-max-width);
+  z-index: var(--z-nav);
+  display: flex;
+  background: var(--color-surface-translucent);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--color-outline);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.navItem {
+  position: relative;
+  flex: 1;
+  height: var(--layout-nav-height);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--color-on-surface-variant);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-medium);
+  transition: color var(--motion-duration-short) var(--motion-easing-standard);
+}
+
+.navItemActive {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-bold);
+}
+
+/* Píldora MD3 detrás del icono activo. */
+.navIndicator {
+  position: absolute;
+  top: 6px;
+  width: 56px;
+  height: 30px;
+  border-radius: var(--shape-full);
+  background: var(--color-primary-container);
+  opacity: 0;
+  transform: scaleX(0.7);
+  transition:
+    opacity var(--motion-duration-short) var(--motion-easing-standard),
+    transform var(--motion-duration-medium) var(--motion-easing-decelerate);
+}
+
+.navItemActive .navIndicator {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.navIcon {
+  position: relative;
+  z-index: 1;
+}
+
+.navLabel {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── FAB ───────────────────────────────────────────────────────────────── */
+.fab {
+  position: fixed;
+  right: max(var(--space-5), calc(50% - var(--layout-max-width) / 2 + var(--space-5)));
+  bottom: calc(var(--layout-nav-height) + var(--space-5) + env(safe-area-inset-bottom, 0px));
+  z-index: var(--z-fab);
+  width: 56px;
+  height: 56px;
+  border-radius: var(--shape-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: var(--elevation-3);
+  transition: transform var(--motion-duration-short) var(--motion-easing-standard);
+}
+
+.fab:active {
+  transform: scale(0.92);
+}
+
+/* ── Aviso de arranque / persistencia ──────────────────────────────────── */
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--shape-md);
+  background: var(--color-surface-container);
+  border: 1px solid var(--color-warning);
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-body);
+}
+
+.bannerError {
+  border-color: var(--color-error);
+}
+
+.bannerList {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-4);
+  color: var(--color-on-surface-variant);
+}
+
+.bannerList li + li {
+  margin-top: var(--space-1);
+}
+
+.bannerBody {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Pantalla de carga ─────────────────────────────────────────────────── */
+.splash {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  color: var(--color-on-surface-variant);
+  font-size: var(--font-size-body-sm);
+}

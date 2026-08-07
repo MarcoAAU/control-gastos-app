@@ -1,0 +1,64 @@
+/**
+ * Tema claro.
+ *
+ * Se activa SÓLO de forma explícita con <html data-theme="light">. No se
+ * engancha todavía a prefers-color-scheme: eso es de la Fase 18, junto con el
+ * selector de tema en Ajustes. Existe ya en la Fase 2 por una razón concreta:
+ * obliga a que los primitivos se escriban contra roles semánticos y no contra
+ * hex del tema oscuro. Si un componente "hardcodea" un color, se ve al
+ * instante al alternar el atributo en el kitchensink.
+ *
+ * Todos los pares texto/fondo verificados ≥ 4.5:1 (WCAG AA texto normal):
+ *   on-surface #0e1425 sobre #ffffff → 17.6:1
+ *   on-surface-variant #566079 sobre #ffffff → 6.3:1
+ *   primary #3a5bd9 sobre #ffffff → 5.7:1   (y blanco sobre primary → 5.7:1)
+ *   error #c2334a sobre #ffffff → 5.4:1
+ *   success #0d7c68 sobre #ffffff → 5.1:1
+ */
+
+[data-theme='light'] {
+  color-scheme: light;
+
+  --color-surface: #f6f7fb;
+  --color-surface-container: #ffffff;
+  --color-surface-container-high: #eceff7;
+  --color-surface-container-highest: #e2e7f3;
+  --color-surface-translucent: rgb(255 255 255 / 92%);
+
+  --color-on-surface: #0e1425;
+  --color-on-surface-variant: #566079;
+
+  --color-outline: #d3d9e8;
+  --color-outline-variant: #e6e9f2;
+
+  --color-primary: #3a5bd9;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #dfe5ff;
+  --color-on-primary-container: #16256e;
+
+  --color-success: #0d7c68;
+  --color-on-success: #ffffff;
+  --color-success-container: #c8f2e8;
+  --color-on-success-container: #00382e;
+
+  --color-error: #c2334a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdadf;
+  --color-on-error-container: #5a0b1a;
+
+  --color-warning: #9a6c00;
+  --color-on-warning: #ffffff;
+
+  --color-scrim: rgb(0 0 0 / 40%);
+  --color-skeleton-base: #e2e7f3;
+  --color-skeleton-shine: #f2f5fb;
+
+  --color-on-surface-rgb: 14 20 37;
+  --color-primary-rgb: 58 91 217;
+
+  /* Las sombras MD3 en claro son más suaves: el negro al 30% que funciona
+     sobre #0b1220 resulta sucio sobre blanco. */
+  --elevation-1: 0 1px 2px rgb(16 24 40 / 6%), 0 1px 3px rgb(16 24 40 / 10%);
+  --elevation-2: 0 1px 2px rgb(16 24 40 / 6%), 0 2px 6px 2px rgb(16 24 40 / 8%);
+  --elevation-3: 0 4px 8px 3px rgb(16 24 40 / 8%), 0 1px 3px rgb(16 24 40 / 10%);
+}

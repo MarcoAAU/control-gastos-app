@@ -1,0 +1,49 @@
+# Dependencias
+node_modules/
+
+# Build
+dist/
+dist-ssr/
+*.local
+
+# Caché de herramientas
+.vite/
+node_modules/.tmp/
+coverage/
+
+# Editores
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Datos reales de usuario (nunca deben commitearse sin anonimizar)
+docs/fixtures/*-real.json
+
+# Claves de firma del APK. NUNCA en el repositorio.
+#
+# Quien tenga el keystore puede publicar una app que Android acepta como
+# actualización legítima de ésta. Y como el repositorio es público, subirlo una
+# sola vez lo deja en el historial de git para siempre: borrarlo después no
+# sirve de nada, habría que generar una clave nueva — lo que obliga a
+# desinstalar la app y pierde los datos del usuario.
+*.keystore
+*.jks
+signing-key-info.txt
+*.apk
+*.aab

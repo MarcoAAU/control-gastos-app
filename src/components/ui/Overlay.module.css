@@ -1,0 +1,214 @@
+/**
+ * Base compartida por Sheet, Modal y ConfirmDialog.
+ *
+ * Un solo sitio para el velo, el foco, el scroll bloqueado y las animaciones:
+ * si se duplicara, cada overlay acabaría con un comportamiento ligeramente
+ * distinto (que es lo que pasaba en v1, con ocho modales escritos a mano).
+ *
+ * ⚠️ LAS ENTRADAS SE ANIMAN CON `animation`, NO CON UN CAMBIO DE CLASE.
+ * Una transición requiere que el navegador pinte el estado inicial antes de
+ * aplicar el final, lo que obliga a esperar un `requestAnimationFrame` — y rAF
+ * no se dispara si la pestaña no está componiendo fotogramas (segundo plano,
+ * ventana oculta). En ese caso el overlay quedaba montado pero invisible.
+ * Una animación de entrada arranca sola al montar el nodo y no depende de eso.
+ */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-scrim);
+  background: var(--color-scrim);
+  display: flex;
+  justify-content: center;
+  animation: overlayFadeIn var(--motion-duration-medium) var(--motion-easing-standard) both;
+  /* El velo sí puede desplazarse en escritorio si el contenido es alto. */
+  overscroll-behavior: contain;
+}
+
+.scrimExiting {
+  animation: overlayFadeOut var(--motion-duration-medium) var(--motion-easing-standard) both;
+}
+
+/* ── Posición según variante ───────────────────────────────────────────── */
+.scrimSheet {
+  align-items: flex-end;
+}
+
+.scrimModal {
+  align-items: center;
+  padding: var(--space-4);
+}
+
+/* ── Panel ─────────────────────────────────────────────────────────────── */
+.panel {
+  position: relative;
+  z-index: var(--z-sheet);
+  background: var(--color-surface-container);
+  color: var(--color-on-surface);
+  width: 100%;
+  max-width: var(--layout-max-width);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--elevation-3);
+}
+
+.panel:focus {
+  /* El contenedor recibe el foco al abrir (ver useFocusTrap) pero no debe
+     dibujar un anillo: el usuario no pulsó Tab para llegar ahí. */
+  outline: none;
+}
+
+.panelSheet {
+  border-radius: var(--shape-xl) var(--shape-xl) 0 0;
+  border-top: 1px solid var(--color-outline);
+  /* Deja hueco para la barra de gestos de iOS/Android. */
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  animation: sheetIn var(--motion-duration-medium) var(--motion-easing-decelerate) both;
+}
+
+.panelSheetExiting {
+  animation: sheetOut var(--motion-duration-medium) var(--motion-easing-accelerate) both;
+}
+
+.panelModal {
+  border-radius: var(--shape-xl);
+  border: 1px solid var(--color-outline);
+  max-width: 380px;
+  animation: modalIn var(--motion-duration-medium) var(--motion-easing-decelerate) both;
+}
+
+.panelModalExiting {
+  animation: modalOut var(--motion-duration-short) var(--motion-easing-accelerate) both;
+}
+
+/* Mientras el dedo arrastra no hay animación: la hoja debe seguirlo
+   exactamente, no ir 250ms por detrás. */
+.panelDragging {
+  animation: none;
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes overlayFadeOut {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes sheetIn {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheetOut {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes modalOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+/* ── Zona de arrastre y cabecera ───────────────────────────────────────── */
+.grabArea {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-5) 0;
+  /* Sin esto el navegador interpreta el gesto vertical como scroll y el
+     arrastre no llega a dispararse. */
+  touch-action: none;
+  cursor: grab;
+}
+
+.handle {
+  width: 40px;
+  height: 4px;
+  margin: var(--space-1) auto var(--space-3);
+  border-radius: var(--shape-full);
+  background: var(--color-outline);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 0 var(--space-5) var(--space-3);
+  flex-shrink: 0;
+}
+
+.modalHeader {
+  padding: var(--space-5) var(--space-5) var(--space-2);
+}
+
+.title {
+  font-size: var(--font-size-title-lg);
+  font-weight: var(--font-weight-bold);
+}
+
+.body {
+  padding: 0 var(--space-5) var(--space-5);
+  overflow-y: auto;
+  /* Impide que el scroll del contenido arrastre la página de detrás. */
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.description {
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-on-surface-variant);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  flex-shrink: 0;
+}
+
+.actions > * {
+  flex: 1;
+}

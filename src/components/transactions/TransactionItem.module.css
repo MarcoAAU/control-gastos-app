@@ -1,0 +1,107 @@
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  border-radius: var(--shape-md);
+  background: var(--color-surface-container);
+  border: 1px solid var(--color-outline);
+  text-align: left;
+  color: inherit;
+  transition: background-color var(--motion-duration-short) var(--motion-easing-standard);
+}
+
+.itemInteractive:active {
+  background: var(--color-surface-container-high);
+}
+
+.icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--shape-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.info {
+  flex: 1;
+  /* Sin `min-width: 0` el texto largo desborda el flex en vez de recortarse:
+     bug clásico y presente en v1. */
+  min-width: 0;
+}
+
+.description {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  font-size: var(--font-size-label);
+  color: var(--color-on-surface-variant);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.amount {
+  flex-shrink: 0;
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.amountIncome {
+  color: var(--color-success);
+}
+
+.amountExpense {
+  color: var(--color-on-surface);
+}
+
+/* Los ajustes de saldo se atenúan: son contabilidad interna, no un gasto ni
+   un ingreso del usuario. */
+.adjustment .description,
+.adjustment .amount {
+  color: var(--color-on-surface-variant);
+  font-style: italic;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dateGroup + .dateGroup {
+  margin-top: var(--space-4);
+}
+
+.dateHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+  padding: 0 var(--space-1);
+}
+
+.dateLabel {
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-on-surface-variant);
+  text-transform: capitalize;
+}
+
+.dateTotal {
+  font-size: var(--font-size-label);
+  color: var(--color-on-surface-variant);
+  font-variant-numeric: tabular-nums;
+}

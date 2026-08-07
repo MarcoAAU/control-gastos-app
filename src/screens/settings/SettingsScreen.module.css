@@ -1,0 +1,124 @@
+.card,
+.warningCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.warningCard {
+  border-color: var(--color-warning);
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-bold);
+}
+
+.sectionText {
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-on-surface-variant);
+}
+
+.sectionText strong {
+  color: var(--color-on-surface);
+  font-weight: var(--font-weight-semibold);
+}
+
+.warningList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-on-surface-variant);
+  padding-left: var(--space-4);
+  list-style: disc;
+}
+
+.stats {
+  display: flex;
+  gap: var(--space-2);
+  font-size: var(--font-size-label);
+  color: var(--color-on-surface-variant);
+  font-variant-numeric: tabular-nums;
+}
+
+.meta {
+  font-size: var(--font-size-label);
+  color: var(--color-on-surface-variant);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* El input real se oculta pero SIGUE EN EL FLUJO y es enfocable: `display:none`
+   lo sacaría del árbol de accesibilidad y en algunos navegadores impide que
+   `.click()` abra el selector de archivos. */
+.hiddenInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ── Fila de navegación ─────────────────────────────────────────────────── */
+.navRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  border-radius: var(--shape-lg);
+  background: var(--color-surface-container);
+  border: 1px solid var(--color-outline);
+  color: inherit;
+  min-height: var(--layout-touch-target);
+  margin-bottom: var(--space-3);
+}
+
+.navText {
+  flex: 1;
+  min-width: 0;
+}
+
+.navTitle {
+  display: block;
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-semibold);
+}
+
+.navHint {
+  display: block;
+  font-size: var(--font-size-label);
+  color: var(--color-on-surface-variant);
+  margin-top: 2px;
+}
+
+.version {
+  text-align: center;
+  font-size: var(--font-size-label);
+  color: var(--color-on-surface-variant);
+  padding: var(--space-4) 0 var(--space-2);
+}
+
+.confirmText {
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-on-surface-variant);
+  padding: var(--space-2) 0;
+}
+
+.confirmText strong {
+  color: var(--color-on-surface);
+  font-weight: var(--font-weight-semibold);
+}

@@ -1,0 +1,139 @@
+/**
+ * Estilos compartidos por TextField, AmountField y Select.
+ *
+ * Un solo archivo para los tres: son el mismo control con distinto interior,
+ * y separarlos garantizaría que con el tiempo dejaran de parecerse.
+ */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.label {
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-on-surface-variant);
+}
+
+.required {
+  color: var(--color-error);
+  margin-left: 2px;
+}
+
+.control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--color-surface-container-high);
+  border: 1px solid var(--color-outline);
+  border-radius: var(--shape-md);
+  padding: 0 var(--space-3);
+  /* 48px: el mínimo táctil accesible. Los campos de v1 medían 40. */
+  min-height: var(--layout-touch-target);
+  transition:
+    border-color var(--motion-duration-short) var(--motion-easing-standard),
+    background-color var(--motion-duration-short) var(--motion-easing-standard);
+}
+
+.control:focus-within {
+  border-color: var(--color-primary);
+}
+
+.controlInvalid {
+  border-color: var(--color-error);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--color-on-surface);
+  font-size: var(--font-size-body);
+  padding: var(--space-3) 0;
+}
+
+.input::placeholder {
+  color: var(--color-on-surface-variant);
+  opacity: 0.7;
+}
+
+/* El anillo de foco lo dibuja el contenedor, no el input. */
+.input:focus-visible {
+  outline: none;
+}
+
+.prefix,
+.suffix {
+  flex-shrink: 0;
+  color: var(--color-on-surface-variant);
+  font-size: var(--font-size-body);
+}
+
+/* ── Importes ──────────────────────────────────────────────────────────── */
+.amountInput {
+  font-size: var(--font-size-headline);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-tight);
+  /* Cifras de ancho fijo: sin esto el importe "salta" a cada dígito tecleado. */
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.amountPrefix {
+  font-size: var(--font-size-title-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-on-surface-variant);
+}
+
+.amountIncome {
+  color: var(--color-success);
+}
+
+.amountExpense {
+  color: var(--color-error);
+}
+
+/* ── Select ────────────────────────────────────────────────────────────── */
+.select {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--color-on-surface);
+  font-size: var(--font-size-body);
+  padding: var(--space-3) 0;
+  /* Se oculta la flecha nativa para poner la nuestra y que sea igual en
+     Android, iOS y escritorio. */
+  appearance: none;
+}
+
+.select option {
+  /* Los menús nativos de Android ignoran el color heredado en tema oscuro. */
+  background: var(--color-surface-container-high);
+  color: var(--color-on-surface);
+}
+
+.selectChevron {
+  flex-shrink: 0;
+  color: var(--color-on-surface-variant);
+  pointer-events: none;
+}
+
+/* ── Mensajes ──────────────────────────────────────────────────────────── */
+.help {
+  font-size: var(--font-size-label);
+  color: var(--color-on-surface-variant);
+  line-height: var(--line-height-body);
+}
+
+.error {
+  font-size: var(--font-size-label);
+  color: var(--color-error);
+  line-height: var(--line-height-body);
+}

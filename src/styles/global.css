@@ -1,0 +1,57 @@
+/**
+ * Punto de entrada único de los estilos globales.
+ *
+ * Orden obligatorio: reset → tokens (sin color) → tema oscuro (por defecto)
+ * → tema claro (override por atributo). Alterarlo rompe la cascada.
+ *
+ * A partir de aquí NINGÚN otro archivo global existe: todo lo demás son CSS
+ * Modules con ámbito local (ADR-011). Si algo necesita estilo, o es un token
+ * o es un módulo — nunca una clase global nueva.
+ */
+
+@import './reset.css';
+@import './tokens.css';
+@import './themes/dark.css';
+@import './themes/light.css';
+
+html,
+body {
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  /* Sin resaltado azul al tocar en Android/iOS: los estados táctiles los
+     dibujan los primitivos con capas de estado MD3. */
+  -webkit-tap-highlight-color: transparent;
+  /* Impide el "pull to refresh" que en una PWA instalada recarga la app y
+     parece un fallo. Heredado de v1. */
+  overscroll-behavior-y: contain;
+}
+
+#root {
+  min-height: 100vh;
+  /* La app se diseñó para móvil (480px); en escritorio se centra en vez de
+     estirarse a 1920px con tarjetas deformes. */
+  max-width: var(--layout-max-width);
+  margin-inline: auto;
+  background: var(--color-surface);
+}
+
+/* Los importes deben alinearse en columna y no "bailar" al cambiar de cifra. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Texto sólo para lectores de pantalla (etiquetas de iconos, encabezados de
+   sección visualmente implícitos). Lo usan IconButton y EmptyState. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

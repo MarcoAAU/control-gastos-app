@@ -1,0 +1,77 @@
+/**
+ * Tema oscuro — el tema POR DEFECTO de la app.
+ *
+ * Es una traducción de la paleta de v1 (style.css:1-14) a roles semánticos
+ * MD3. Los hex son literalmente los mismos que el usuario ya conoce; lo que
+ * cambia es que ahora se nombran por su FUNCIÓN (--color-surface-container)
+ * y no por su apariencia (--surface-2). Un rediseño futuro toca este archivo
+ * y nada más.
+ *
+ * Correspondencia con v1:
+ *   --bg        #0b1220 → --color-surface
+ *   --surface   #131c2e → --color-surface-container
+ *   --surface-2 #1a2540 → --color-surface-container-high
+ *   --border    #223054 → --color-outline
+ *   --text      #eef2ff → --color-on-surface
+ *   --text-dim  #93a2c6 → --color-on-surface-variant
+ *   --accent    #6c8dff → --color-primary
+ *   --danger    #ff6b7a → --color-error
+ *   --safe      #4bd9c0 → --color-success
+ *
+ * ÚNICA desviación de color respecto a v1 (documentada en ADR-012): v1 pintaba
+ * texto blanco sobre el acento #6c8dff, que da 3.05:1 de contraste — por debajo
+ * del mínimo AA de 4.5:1. Aquí --color-on-primary es azul muy oscuro (5.9:1),
+ * que además es lo que MD3 prescribe para un primario claro en tema oscuro.
+ */
+
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* ── Superficies ─────────────────────────────────────────────────────── */
+  --color-surface: #0b1220;
+  --color-surface-container: #131c2e;
+  --color-surface-container-high: #1a2540;
+  --color-surface-container-highest: #223054;
+  /* Fondo translúcido para barras fijas (topbar / bottom nav de v1). */
+  --color-surface-translucent: rgb(19 28 46 / 92%);
+
+  /* ── Contenido sobre superficies ─────────────────────────────────────── */
+  --color-on-surface: #eef2ff; /* 15.9:1 sobre --color-surface-container */
+  --color-on-surface-variant: #93a2c6; /* 6.7:1 — AA para texto normal */
+
+  /* ── Bordes ──────────────────────────────────────────────────────────── */
+  --color-outline: #223054;
+  --color-outline-variant: #1a2540;
+
+  /* ── Primario ────────────────────────────────────────────────────────── */
+  --color-primary: #6c8dff;
+  --color-on-primary: #0a1338; /* 5.9:1 sobre --color-primary */
+  --color-primary-container: #24325e;
+  --color-on-primary-container: #c7d3ff;
+
+  /* ── Semánticos de dinero ────────────────────────────────────────────── */
+  /* success = ingresos, error = gastos. Nombrarlos así (y no "verde"/"rojo")
+     permite que el tema claro use tonos distintos sin tocar un componente. */
+  --color-success: #4bd9c0; /* 9.7:1 sobre --color-surface-container */
+  --color-on-success: #00201a;
+  --color-success-container: #12463d;
+  --color-on-success-container: #a5f0e2;
+
+  --color-error: #ff6b7a; /* 6.2:1 sobre --color-surface-container */
+  --color-on-error: #3d0710;
+  --color-error-container: #5a1a24;
+  --color-on-error-container: #ffd5da;
+
+  --color-warning: #ffd166;
+  --color-on-warning: #3a2a00;
+
+  /* ── Utilidades ──────────────────────────────────────────────────────── */
+  --color-scrim: rgb(0 0 0 / 55%);
+  --color-skeleton-base: #1a2540;
+  --color-skeleton-shine: #253055;
+  /* Componente RGB del color de contenido, para las capas de estado MD3
+     (necesario porque color-mix() aún no es universal en WebViews antiguos). */
+  --color-on-surface-rgb: 238 242 255;
+  --color-primary-rgb: 108 141 255;
+}
