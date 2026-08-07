@@ -1,0 +1,104 @@
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  padding: var(--space-2) var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+.systemNote {
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-on-surface-variant);
+  margin-bottom: var(--space-4);
+}
+
+/* ── Acciones ───────────────────────────────────────────────────────────── */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
+.actionRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  border-radius: var(--shape-lg);
+  background: var(--color-surface-container);
+  border: 1px solid var(--color-outline);
+  color: var(--color-on-surface);
+  text-align: left;
+  min-height: var(--layout-touch-target);
+}
+
+.actionRow:active {
+  background: var(--color-surface-container-high);
+}
+
+.actionText {
+  flex: 1;
+  min-width: 0;
+}
+
+.actionTitle {
+  display: block;
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-semibold);
+}
+
+.actionHint {
+  display: block;
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-on-surface-variant);
+  margin-top: 2px;
+}
+
+.actionDanger {
+  color: var(--color-error);
+}
+
+/* ── Lista de movimientos ───────────────────────────────────────────────── */
+.listTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--space-2);
+  padding: 0 var(--space-1);
+}
+
+.listCount {
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-on-surface-variant);
+  background: var(--color-surface-container-high);
+  border-radius: var(--shape-full);
+  padding: 1px var(--space-2);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.confirmText {
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-on-surface-variant);
+  padding: var(--space-2) 0;
+}
+
+.confirmText strong {
+  color: var(--color-on-surface);
+  font-weight: var(--font-weight-semibold);
+}

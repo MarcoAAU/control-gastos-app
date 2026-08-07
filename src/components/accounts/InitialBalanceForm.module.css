@@ -1,0 +1,65 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-top: var(--space-2);
+}
+
+/* El aviso va ARRIBA, antes del campo: leerlo después de teclear la cifra
+   sería leerlo cuando ya has decidido. */
+.warning {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--shape-md);
+  background: var(--color-surface-container-high);
+  border: 1px solid var(--color-warning);
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-on-surface-variant);
+}
+
+.warning > :first-child {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--color-warning);
+}
+
+.warning strong {
+  color: var(--color-on-surface);
+  font-weight: var(--font-weight-semibold);
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-radius: var(--shape-md);
+  background: var(--color-surface-container-high);
+  border: 1px solid var(--color-outline);
+}
+
+.previewLabel {
+  font-size: var(--font-size-label);
+  color: var(--color-on-surface-variant);
+}
+
+.previewValues {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.previewFrom {
+  font-size: var(--font-size-title-sm);
+  color: var(--color-on-surface-variant);
+  text-decoration: line-through;
+}
+
+.previewTo {
+  font-size: var(--font-size-title-lg);
+  font-weight: var(--font-weight-bold);
+}

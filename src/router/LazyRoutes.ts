@@ -18,6 +18,9 @@ import { lazy } from 'react';
 export const DashboardScreen = lazy(() => import('@/screens/dashboard/DashboardScreen'));
 export const TransactionsScreen = lazy(() => import('@/screens/transactions/TransactionsScreen'));
 export const AccountsScreen = lazy(() => import('@/screens/accounts/AccountsScreen'));
+export const AccountDetailScreen = lazy(
+  () => import('@/screens/accounts/AccountDetailScreen'),
+);
 export const TrackingScreen = lazy(() => import('@/screens/tracking/TrackingScreen'));
 export const ReportsScreen = lazy(() => import('@/screens/reports/ReportsScreen'));
 export const CategoriesScreen = lazy(() => import('@/screens/categories/CategoriesScreen'));

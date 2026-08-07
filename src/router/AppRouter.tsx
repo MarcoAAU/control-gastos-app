@@ -2,6 +2,7 @@ import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { ROUTES } from '@/constants';
 import { AppShell } from '@/components/layout';
 import {
+  AccountDetailScreen,
   AccountsScreen,
   CategoriesScreen,
   DashboardScreen,
@@ -45,7 +46,7 @@ export function AppRouter() {
           <Route path={ROUTES.dashboard} element={<DashboardScreen />} />
           <Route path={ROUTES.transactions} element={<TransactionsScreen />} />
           <Route path={ROUTES.accounts} element={<AccountsScreen />} />
-          <Route path={ROUTES.accountDetail} element={<AccountsScreen />} />
+          <Route path={ROUTES.accountDetail} element={<AccountDetailScreen />} />
           <Route path={ROUTES.tracking} element={<TrackingScreen />} />
           <Route path={ROUTES.reports} element={<ReportsScreen />} />
           <Route path={ROUTES.categories} element={<CategoriesScreen />} />

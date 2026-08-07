@@ -1,0 +1,109 @@
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--shape-lg);
+  background: var(--color-surface-container);
+  border: 1px solid var(--color-outline);
+  margin-bottom: var(--space-4);
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--shape-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.identityText {
+  min-width: 0;
+}
+
+.name {
+  display: block;
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  display: block;
+  font-size: var(--font-size-label);
+  color: var(--color-on-surface-variant);
+  margin-top: 2px;
+}
+
+.balance {
+  font-size: var(--font-size-display);
+  font-weight: var(--font-weight-black);
+  font-variant-numeric: tabular-nums;
+}
+
+.balanceNegative {
+  color: var(--color-error);
+}
+
+.excluded {
+  font-size: var(--font-size-label);
+  color: var(--color-on-surface-variant);
+}
+
+/* ── Desglose ───────────────────────────────────────────────────────────── */
+.breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-outline-variant);
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--font-size-body-sm);
+  color: var(--color-on-surface-variant);
+}
+
+.row dt {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.row dd {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rowHint {
+  font-size: var(--font-size-label-sm);
+  /* Un tono más apagado que la propia etiqueta, para que no compita con ella. */
+  opacity: 0.8;
+}
+
+.income {
+  color: var(--color-success);
+}
+
+.rowTotal {
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-outline-variant);
+  color: var(--color-on-surface);
+  font-weight: var(--font-weight-bold);
+}

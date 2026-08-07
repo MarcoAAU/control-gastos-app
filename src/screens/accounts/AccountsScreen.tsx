@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
-import { PALETTE, SYSTEM_ACCOUNT_UNASSIGNED, SYSTEM_BANK_NONE } from '@/constants';
-import type { Account, Bank } from '@/models';
+import { useNavigate } from 'react-router-dom';
+import { buildPath, PALETTE, ROUTES, SYSTEM_BANK_NONE, SYSTEM_IDS } from '@/constants';
+import type { Bank } from '@/models';
 import { Fab, ScreenContainer, TopBar } from '@/components/layout';
-import { Button, Card, EmptyState, Icon, Sheet } from '@/components/ui';
+import { Button, Card, EmptyState, Icon, Sheet, TextField } from '@/components/ui';
 import { AccountCard } from '@/components/accounts/AccountCard';
 import { AccountForm, type AccountFormValues } from '@/components/accounts/AccountForm';
-import { AdjustBalanceForm } from '@/components/accounts/AdjustBalanceForm';
 import { BankPicker } from '@/components/accounts/BankPicker';
 import { useAppStore } from '@/store';
 import { useAccountBalances, useAccounts, useBanks } from '@/store/hooks/useAccounts';
@@ -14,61 +14,50 @@ import { cn } from '@/utils/cn';
 import styles from './AccountsScreen.module.css';
 
 /**
- * Qué hoja está abierta y en qué paso.
+ * Qué hoja está abierta.
  *
- * ⚠️ SON DOS HOJAS, NO SIETE. Cada grupo de estados vive dentro de UNA hoja que
- * cambia de contenido, en vez de abrir una encima de otra. Encadenar overlays
- * resultó frágil (ver `useBackButton`) y en móvil apila velos sobre velos.
- * Es el mismo patrón que ya usa la pantalla de Movimientos.
+ * ⚠️ AQUÍ YA NO HAY ACCIONES SOBRE UNA CUENTA. Tocar una tarjeta navega a su
+ * detalle (Fase 12), que es donde viven ajustar, editar, cambiar saldo inicial
+ * y desconectar. Antes esas acciones estaban también en esta pantalla: dos
+ * sitios con las mismas operaciones significan dos confirmaciones que hay que
+ * mantener sincronizadas, y tarde o temprano divergen.
  */
 type SheetState =
-  // Hoja "nueva cuenta": elegir banco → rellenar datos.
   | { kind: 'closed' }
   | { kind: 'pickBank' }
   | { kind: 'createAccount'; bank: Bank | null }
-  // Hoja "cuenta": acciones → ajustar | editar | confirmar borrado.
-  | { kind: 'actions'; account: Account }
-  | { kind: 'adjust'; account: Account }
-  | { kind: 'edit'; account: Account }
-  | { kind: 'confirmDelete'; account: Account };
+  | { kind: 'banks' }
+  | { kind: 'renameBank'; bank: Bank };
 
 const CREATE_FORM_ID = 'account-create-form';
-const EDIT_FORM_ID = 'account-edit-form';
-const ADJUST_FORM_ID = 'account-adjust-form';
 
 /**
- * Cuentas. Paridad con la vista de v1, sobre el modelo derivado.
+ * Cuentas: el saldo total y la lista.
  *
- * ── LO QUE HAY QUE ENTENDER DE ESTA PANTALLA ──────────────────────────────
- * Ningún saldo se lee de un campo guardado: todos salen de `useAccountBalances`,
- * que deriva del libro de movimientos. Por eso esta pantalla no puede
- * descuadrarse — no existe un segundo sitio donde el saldo pueda estar mal.
- *
- * En v1, `account.balance` era un campo que cada alta, edición y borrado de
- * movimiento tenía que acordarse de actualizar a mano (`app.js:171-173`). Un
- * solo olvido rompía la contabilidad para siempre y sin forma de detectarlo.
+ * Ningún saldo se lee de un campo guardado: todos salen de
+ * `useAccountBalances`, que deriva del libro de movimientos. En v1
+ * `account.balance` era un campo que cada alta, edición y borrado de
+ * movimiento tenía que acordarse de actualizar a mano (`app.js:171-173`); un
+ * solo olvido rompía la contabilidad sin forma de detectarlo.
  */
 export default function AccountsScreen() {
+  const navigate = useNavigate();
   const accounts = useAccounts();
   const balances = useAccountBalances();
   const { banks, byId: bankById } = useBanks();
 
   const addAccount = useAppStore((state) => state.addAccount);
-  const updateAccount = useAppStore((state) => state.updateAccount);
-  const archiveAccount = useAppStore((state) => state.archiveAccount);
   const addBank = useAppStore((state) => state.addBank);
-  const adjustAccountBalance = useAppStore((state) => state.adjustAccountBalance);
+  const updateBank = useAppStore((state) => state.updateBank);
   const showToast = useAppStore((state) => state.showToast);
 
   const [sheet, setSheet] = useState<SheetState>({ kind: 'closed' });
+  const [bankName, setBankName] = useState('');
 
   /**
-   * Total que se muestra arriba.
-   *
-   * ⚠️ SE ROTULA "Saldo total" Y NUNCA "Ingresos". Ésa fue exactamente la
-   * confusión de v1: `app.js:221` sumaba los saldos de las cuentas y lo
-   * mostraba bajo la etiqueta "Ingresos", así que cada gasto la hacía bajar y
-   * parecía que los gastos se comían los ingresos (ADR-003).
+   * ⚠️ Se rotula "Saldo total" y NUNCA "Ingresos". Ésa fue la confusión de v1:
+   * `app.js:221` sumaba los saldos y lo mostraba bajo "Ingresos", así que cada
+   * gasto lo hacía bajar (ADR-003).
    */
   const total = useMemo(() => {
     let sum = 0;
@@ -84,20 +73,16 @@ export default function AccountsScreen() {
     [banks],
   );
 
-  const selected =
-    sheet.kind === 'actions' ||
-    sheet.kind === 'adjust' ||
-    sheet.kind === 'edit' ||
-    sheet.kind === 'confirmDelete'
-      ? sheet.account
-      : null;
-
-  const accountSheetOpen = selected !== null;
-  const createSheetOpen = sheet.kind === 'pickBank' || sheet.kind === 'createAccount';
+  /** Cuántas cuentas usa cada banco: decide si renombrarlo es inocuo. */
+  const usageByBank = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const account of accounts) {
+      counts.set(account.bankId, (counts.get(account.bankId) ?? 0) + 1);
+    }
+    return counts;
+  }, [accounts]);
 
   function handleCreate(values: AccountFormValues): void {
-    // El banco se resuelve a una entidad reutilizable. `addBank` es idempotente:
-    // escribir dos veces "Bancolombia" no crea dos bancos.
     const bankId = values.bankName ? addBank({ name: values.bankName }) : SYSTEM_BANK_NONE;
 
     addAccount({
@@ -114,61 +99,21 @@ export default function AccountsScreen() {
     showToast('Cuenta agregada', 'success');
   }
 
-  function handleEdit(values: AccountFormValues): void {
-    if (sheet.kind !== 'edit') return;
-    const bankId = values.bankName ? addBank({ name: values.bankName }) : SYSTEM_BANK_NONE;
+  function handleRenameBank(event: React.FormEvent): void {
+    event.preventDefault();
+    if (sheet.kind !== 'renameBank') return;
+    const name = bankName.trim();
+    if (!name) return;
 
-    updateAccount(sheet.account.id, {
-      name: values.name,
-      bankId: bankId || SYSTEM_BANK_NONE,
-      type: values.type,
-      includeInTotals: values.includeInTotals,
-    });
-
-    setSheet({ kind: 'closed' });
-    showToast('Cuenta actualizada', 'success');
+    updateBank(sheet.bank.id, { name });
+    setSheet({ kind: 'banks' });
+    // Renombrar el banco cambia el rótulo de todas sus cuentas a la vez: es lo
+    // que v1 no podía hacer, porque el nombre vivía copiado dentro de cada una.
+    showToast('Banco renombrado en todas sus cuentas.', 'success');
   }
 
-  function handleAdjust(values: {
-    targetBalance: number;
-    date: string;
-    notes: string;
-  }): void {
-    if (sheet.kind !== 'adjust') return;
-    const account = sheet.account;
-    const currentBalance = balances.get(account.id) ?? account.initialBalance;
-
-    const id = adjustAccountBalance({
-      accountId: account.id,
-      currentBalance,
-      targetBalance: values.targetBalance,
-      date: values.date,
-      notes: values.notes,
-    });
-
-    setSheet({ kind: 'closed' });
-
-    if (id === null) {
-      showToast('La cuenta ya cuadraba: no se registró nada.', 'info');
-      return;
-    }
-    // El mensaje dice QUÉ se hizo, no sólo que se hizo. En v1 el saldo cambiaba
-    // sin explicación y no había forma de saber por qué.
-    const delta = values.targetBalance - currentBalance;
-    showToast(
-      `Se registró un ajuste de ${formatMoney(Math.abs(delta))} para cuadrar el saldo.`,
-      'success',
-    );
-  }
-
-  function handleDelete(): void {
-    if (sheet.kind !== 'confirmDelete') return;
-    // Borrado LÓGICO. Un borrado físico dejaría sus movimientos apuntando a una
-    // cuenta inexistente; así el historial sigue siendo legible y consistente.
-    archiveAccount(sheet.account.id);
-    setSheet({ kind: 'closed' });
-    showToast('Cuenta desconectada. Sus movimientos se conservan.', 'success');
-  }
+  const createSheetOpen = sheet.kind === 'pickBank' || sheet.kind === 'createAccount';
+  const banksSheetOpen = sheet.kind === 'banks' || sheet.kind === 'renameBank';
 
   return (
     <>
@@ -177,7 +122,6 @@ export default function AccountsScreen() {
       <ScreenContainer>
         {accounts.length > 0 && (
           <Card className={styles.totalCard}>
-            {/* La etiqueta es literal y deliberada: ver el comentario de `total`. */}
             <span className={styles.totalLabel}>Saldo total</span>
             <span className={cn(styles.totalValue, total < 0 && styles.totalNegative)}>
               {formatMoney(total)}
@@ -202,26 +146,42 @@ export default function AccountsScreen() {
             />
           </Card>
         ) : (
-          <div className={styles.list}>
-            {accounts.map((account) => (
-              <AccountCard
-                key={account.id}
-                account={account}
-                balance={balances.get(account.id) ?? account.initialBalance}
-                bank={bankById.get(account.bankId)}
-                onPress={(selectedAccount) =>
-                  setSheet({ kind: 'actions', account: selectedAccount })
-                }
-              />
-            ))}
-          </div>
+          <>
+            <div className={styles.list}>
+              {accounts.map((account) => (
+                <AccountCard
+                  key={account.id}
+                  account={account}
+                  balance={balances.get(account.id) ?? account.initialBalance}
+                  bank={bankById.get(account.bankId)}
+                  onPress={(selected) =>
+                    navigate(buildPath(ROUTES.accountDetail, { accountId: selected.id }))
+                  }
+                />
+              ))}
+            </div>
+
+            <button
+              type="button"
+              className={styles.banksRow}
+              onClick={() => setSheet({ kind: 'banks' })}
+            >
+              <Icon name="bank" size="md" />
+              <span className={styles.banksText}>
+                <span className={styles.banksTitle}>Bancos</span>
+                <span className={styles.banksHint}>
+                  {pickableBanks.length} guardados · renombra el tuyo
+                </span>
+              </span>
+              <Icon name="chevron-right" size="sm" />
+            </button>
+          </>
         )}
       </ScreenContainer>
 
       <Fab label="Conectar banco" onClick={() => setSheet({ kind: 'pickBank' })} />
 
-      {/* ── HOJA 1: nueva cuenta (elegir banco → datos) ────────────────────
-          Un solo overlay que cambia de paso. v1 abría un modal encima de otro. */}
+      {/* ── HOJA 1: nueva cuenta (elegir banco → datos) ────────────────── */}
       <Sheet
         open={createSheetOpen}
         onClose={() => setSheet({ kind: 'closed' })}
@@ -255,117 +215,91 @@ export default function AccountsScreen() {
         )}
       </Sheet>
 
-      {/* ── HOJA 2: una cuenta (acciones → ajustar | editar | borrar) ────── */}
+      {/* ── HOJA 2: gestión de bancos ──────────────────────────────────── */}
       <Sheet
-        open={accountSheetOpen}
+        open={banksSheetOpen}
         onClose={() => setSheet({ kind: 'closed' })}
-        title={
-          sheet.kind === 'adjust'
-            ? 'Ajustar saldo'
-            : sheet.kind === 'edit'
-              ? 'Editar cuenta'
-              : sheet.kind === 'confirmDelete'
-                ? '¿Desconectar la cuenta?'
-                : (selected?.name ?? 'Cuenta')
-        }
+        title={sheet.kind === 'renameBank' ? 'Renombrar banco' : 'Bancos'}
         footer={
-          selected && sheet.kind !== 'actions' ? (
+          sheet.kind === 'renameBank' ? (
             <>
-              {/* Volver, nunca cerrar: cancelar un paso no debe perder el contexto. */}
-              <Button
-                variant="tonal"
-                onClick={() => setSheet({ kind: 'actions', account: selected })}
-              >
-                {sheet.kind === 'confirmDelete' ? 'Cancelar' : 'Atrás'}
+              <Button variant="tonal" onClick={() => setSheet({ kind: 'banks' })}>
+                Cancelar
               </Button>
-              {sheet.kind === 'adjust' && (
-                <Button type="submit" form={ADJUST_FORM_ID}>
-                  Registrar ajuste
-                </Button>
-              )}
-              {sheet.kind === 'edit' && (
-                <Button type="submit" form={EDIT_FORM_ID}>
-                  Guardar cambios
-                </Button>
-              )}
-              {sheet.kind === 'confirmDelete' && (
-                <Button variant="danger" onClick={handleDelete}>
-                  Desconectar
-                </Button>
-              )}
+              <Button type="submit" form="bank-form">
+                Guardar
+              </Button>
             </>
           ) : undefined
         }
       >
-        {selected && sheet.kind === 'actions' && (
+        {sheet.kind === 'banks' && (
           <>
-            <div className={styles.detail}>
-              <span className={styles.detailBalance}>
-                {formatMoney(balances.get(selected.id) ?? selected.initialBalance)}
-              </span>
-              <span className={styles.detailMeta}>
-                {bankById.get(selected.bankId)?.name ?? 'Sin banco'}
-              </span>
-            </div>
-
-            <div className={styles.actions}>
-              <button
-                type="button"
-                className={styles.actionRow}
-                onClick={() => setSheet({ kind: 'adjust', account: selected })}
-              >
-                <Icon name="cat-ajuste" size="md" />
-                Ajustar saldo
-              </button>
-              <button
-                type="button"
-                className={styles.actionRow}
-                onClick={() => setSheet({ kind: 'edit', account: selected })}
-              >
-                <Icon name="edit" size="md" />
-                Editar cuenta
-              </button>
-              <button
-                type="button"
-                className={cn(styles.actionRow, styles.actionDanger)}
-                onClick={() => setSheet({ kind: 'confirmDelete', account: selected })}
-                // La cuenta técnica que recoge los movimientos huérfanos de la
-                // migración no se puede desconectar: dejaría de haber dónde
-                // ponerlos.
-                disabled={selected.id === SYSTEM_ACCOUNT_UNASSIGNED}
-              >
-                <Icon name="delete" size="md" />
-                Desconectar cuenta
-              </button>
+            <p className={styles.banksIntro}>
+              El nombre vive en el banco, no copiado dentro de cada cuenta: al renombrarlo cambia
+              en todas a la vez.
+            </p>
+            <div className={styles.bankList}>
+              {pickableBanks.map((bank) => {
+                const used = usageByBank.get(bank.id) ?? 0;
+                const locked = SYSTEM_IDS.includes(bank.id);
+                return (
+                  <div key={bank.id} className={styles.bankItem}>
+                    <span
+                      className={styles.bankDot}
+                      style={{ background: bank.color }}
+                      aria-hidden="true"
+                    />
+                    <span className={styles.bankInfo}>
+                      <span className={styles.bankName}>{bank.name}</span>
+                      <span className={styles.bankMeta}>
+                        {bank.isBuiltIn ? 'De la app' : 'Tuyo'} ·{' '}
+                        {used === 0 ? 'sin cuentas' : `${used} ${used === 1 ? 'cuenta' : 'cuentas'}`}
+                      </span>
+                    </span>
+                    {!locked && (
+                      <button
+                        type="button"
+                        className={styles.bankAction}
+                        aria-label={`Renombrar ${bank.name}`}
+                        onClick={() => {
+                          setBankName(bank.name);
+                          setSheet({ kind: 'renameBank', bank });
+                        }}
+                      >
+                        <Icon name="edit" size="sm" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </>
         )}
 
-        {selected && sheet.kind === 'adjust' && (
-          <AdjustBalanceForm
-            key={selected.id}
-            formId={ADJUST_FORM_ID}
-            account={selected}
-            currentBalance={balances.get(selected.id) ?? selected.initialBalance}
-            onSubmit={handleAdjust}
-          />
-        )}
-
-        {selected && sheet.kind === 'edit' && (
-          <AccountForm
-            key={selected.id}
-            formId={EDIT_FORM_ID}
-            account={selected}
-            bank={bankById.get(selected.bankId) ?? null}
-            onSubmit={handleEdit}
-          />
-        )}
-
-        {selected && sheet.kind === 'confirmDelete' && (
-          <p className={styles.confirmText}>
-            <strong>{selected.name}</strong> dejará de aparecer y su saldo saldrá del total.{' '}
-            <strong>Sus movimientos se conservan</strong> y seguirás viéndolos en la lista.
-          </p>
+        {sheet.kind === 'renameBank' && (
+          <form id="bank-form" className={styles.bankForm} onSubmit={handleRenameBank} noValidate>
+            <TextField
+              label="Nombre del banco"
+              value={bankName}
+              onChange={setBankName}
+              maxLength={40}
+              required
+              autoFocus
+            />
+            <p className={styles.bankFormHint}>
+              {(() => {
+                const used = usageByBank.get(sheet.bank.id) ?? 0;
+                if (used === 0) return 'Ninguna cuenta lo usa todavía.';
+                return (
+                  <>
+                    Cambiará en {used === 1 ? 'la' : 'las'} <strong>{used}</strong>{' '}
+                    {used === 1 ? 'cuenta que lo usa' : 'cuentas que lo usan'}.
+                  </>
+                );
+              })()}
+            </p>
+          </form>
         )}
       </Sheet>
     </>

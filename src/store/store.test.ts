@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { STORAGE_KEY, SYSTEM_CATEGORY_ADJUSTMENT, SYSTEM_CATEGORY_UNCATEGORIZED } from '@/constants';
+import {
+  STORAGE_KEY,
+  SYSTEM_BANK_NONE,
+  SYSTEM_CATEGORY_ADJUSTMENT,
+  SYSTEM_CATEGORY_UNCATEGORIZED,
+} from '@/constants';
 import { computeAccountBalance } from '@/services/balance/computeAccountBalance';
 import { solveAdjustment } from '@/services/balance/solveAdjustment';
 import { AppDataRepository } from '@/storage/AppDataRepository';
@@ -220,6 +225,91 @@ describe('ajuste de saldo (ADR-004)', () => {
       accountId: id, currentBalance: 1000000, targetBalance: 1200000, date: '2026-06-15',
     });
     expect(useAppStore.getState().accounts[0]?.initialBalance).toBe(1000000);
+  });
+});
+
+describe('cambiar el saldo inicial (ADR-020) — reescribe el pasado, a diferencia del ajuste', () => {
+  it('mueve el saldo actual exactamente lo que se movió el inicial', () => {
+    const id = addTestAccount(1000000);
+    const { addTransaction, updateAccount } = useAppStore.getState();
+    addTransaction({ type: 'expense', amount: 200000, date: '2026-06-01', accountId: id, categoryId: 'comida' });
+
+    const antes = computeAccountBalance(
+      useAppStore.getState().accounts[0]!,
+      useAppStore.getState().transactions,
+    );
+    expect(antes).toBe(800000);
+
+    updateAccount(id, { initialBalance: 1500000 });
+
+    const despues = computeAccountBalance(
+      useAppStore.getState().accounts[0]!,
+      useAppStore.getState().transactions,
+    );
+    // +500.000 en el inicial ⇒ +500.000 en el actual. Los movimientos de
+    // encima no se tocan.
+    expect(despues).toBe(1300000);
+  });
+
+  it('NO registra ningún movimiento: por eso no deja rastro', () => {
+    // Ésta es la diferencia observable con "Ajustar saldo", que sí crea uno.
+    const id = addTestAccount(1000000);
+    useAppStore.getState().updateAccount(id, { initialBalance: 2000000 });
+    expect(useAppStore.getState().transactions).toEqual([]);
+  });
+
+  it('no altera los movimientos existentes', () => {
+    const id = addTestAccount(1000000);
+    const txId = useAppStore.getState().addTransaction({
+      type: 'expense', amount: 200000, date: '2026-06-01', accountId: id, categoryId: 'comida',
+    });
+    const antes = { ...useAppStore.getState().transactions.find((t) => t.id === txId)! };
+
+    useAppStore.getState().updateAccount(id, { initialBalance: 9000000 });
+
+    const despues = useAppStore.getState().transactions.find((t) => t.id === txId)!;
+    expect(despues.amount).toBe(antes.amount);
+    expect(despues.date).toBe(antes.date);
+  });
+
+  it('acepta un saldo inicial negativo (una tarjeta que arrancaba con deuda)', () => {
+    const id = addTestAccount(0);
+    useAppStore.getState().updateAccount(id, { initialBalance: -420000 });
+    expect(useAppStore.getState().accounts[0]?.initialBalance).toBe(-420000);
+  });
+});
+
+describe('bancos personalizados', () => {
+  it('renombrar el banco cambia el rótulo de TODAS sus cuentas a la vez', () => {
+    // En v1 el nombre se copiaba dentro de cada cuenta (`bankName`), así que
+    // renombrar exigía editar una por una — y era imposible reutilizarlo.
+    const { addBank, addAccount, updateBank } = useAppStore.getState();
+    const bankId = addBank({ name: 'Banco Agrario' });
+    addAccount({ name: 'Ahorros', bankId, initialBalance: 100000, initialBalanceDate: '2026-01-01' });
+    addAccount({ name: 'Corriente', bankId, initialBalance: 200000, initialBalanceDate: '2026-01-01' });
+
+    updateBank(bankId, { name: 'Banco Agrario de Colombia' });
+
+    const state = useAppStore.getState();
+    const bank = state.banks.find((b) => b.id === bankId);
+    expect(bank?.name).toBe('Banco Agrario de Colombia');
+    // Las cuentas referencian el id, no una copia del nombre.
+    expect(state.accounts.every((a) => a.bankId === bankId)).toBe(true);
+  });
+
+  it('no deja renombrar el banco de sistema "Sin banco"', () => {
+    useAppStore.getState().updateBank(SYSTEM_BANK_NONE, { name: 'Otro nombre' });
+    const bank = useAppStore.getState().banks.find((b) => b.id === SYSTEM_BANK_NONE);
+    expect(bank?.name).toBe('Sin banco');
+  });
+
+  it('escribir dos veces el mismo banco no lo duplica', () => {
+    const { addBank } = useAppStore.getState();
+    const primero = addBank({ name: 'Banco Agrario' });
+    const segundo = addBank({ name: 'banco agrario' }); // otra capitalización
+    expect(segundo).toBe(primero);
+    expect(useAppStore.getState().banks.filter((b) => b.name.toLowerCase().includes('agrario')))
+      .toHaveLength(1);
   });
 });
 

@@ -292,6 +292,39 @@ Ninguno de estos avisa: la app simplemente no arranca, o arranca la antigua. Un 
 
 ---
 
+## ADR-020 — "Ajustar saldo" y "Cambiar saldo inicial" son dos operaciones distintas
+
+Se parecen tanto —las dos son un campo de importe que mueve el saldo— que confundirlas es fácil, y hacen cosas opuestas:
+
+| | Ajustar saldo | Cambiar saldo inicial |
+|---|---|---|
+| Qué hace | Registra un movimiento fechado hoy | Reescribe el punto de partida |
+| El pasado | Intacto | **Cambia retroactivamente** |
+| Reversible | Sí: borras el movimiento | No: hay que volver a escribir el valor anterior |
+| Deja rastro | Sí, en el historial | No |
+| Informes anteriores | No cambian | **Cambian todos** |
+| Crea un movimiento | Sí | **No** |
+
+**Ajustar saldo es lo que el usuario quiere casi siempre**: la cuenta no cuadra HOY y hay que cuadrarla. Cambiar el saldo inicial sólo tiene sentido si el punto de partida estaba mal desde el principio — típicamente, una cifra mal tecleada al crear la cuenta.
+
+**Cómo se distinguen en la interfaz.** No basta con nombrarlas distinto: las dos filas del detalle llevan una frase que dice qué hacen ("Cuadra la cuenta con lo que dice tu banco hoy. Reversible." / "Corrige el punto de partida. Reescribe el pasado."), el formulario peligroso abre con un aviso **antes** del campo —leerlo después de teclear la cifra sería leerlo cuando ya has decidido—, y muestra la previsión exacta (`$2.688.000 → $2.988.000`) antes de confirmar. El botón es `danger` y dice "Reescribir", no "Guardar".
+
+**Verificado en la build de producción:** cambiar el inicial de 1.200.000 a 1.500.000 movió el saldo actual exactamente +300.000, **sin crear ningún movimiento** (10 antes, 10 después) — que es la diferencia observable con el ajuste — y el número anunciado coincidió con el resultado.
+
+---
+
+## ADR-021 — Las acciones de una cuenta viven sólo en su detalle
+
+**Decisión.** Tocar una cuenta en la lista navega a `/cuentas/:accountId`. La lista ya no abre una hoja de acciones.
+
+**Por qué se quitó de la lista.** Durante la Fase 8, ajustar/editar/desconectar existían en la hoja de la pantalla de Cuentas. Al añadir el detalle en la Fase 12, las mismas operaciones habrían quedado en dos sitios: dos confirmaciones que mantener sincronizadas y que acaban divergiendo — exactamente el patrón que causó el descuadre de v1, donde el saldo se actualizaba a mano en varias ramas distintas.
+
+**Lo que aporta el detalle.** La lista responde "cuánto tengo"; el detalle responde **por qué**. Con el saldo derivado, un número que no se puede editar a mano desconcierta si no se explica de dónde sale, así que la cabecera muestra la operación entera: `inicial + ingresos − gastos ± ajustes = saldo`. Los ajustes van en su propia línea, separados: mueven el saldo pero no son dinero ganado ni gastado.
+
+**Bancos como entidades.** Renombrar un banco cambia el rótulo de todas sus cuentas a la vez, porque éstas guardan su `bankId` y no una copia del nombre. En v1 el nombre se copiaba dentro de cada cuenta (`bankName`), así que renombrar exigía editarlas una a una y "Otro banco" no se podía reutilizar.
+
+---
+
 ## Decisiones pendientes (se resolverán en su fase)
 
 | Tema | Fase | Nota |
