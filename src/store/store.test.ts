@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SYSTEM_CATEGORY_ADJUSTMENT, STORAGE_KEY } from '@/constants';
+import { STORAGE_KEY, SYSTEM_CATEGORY_ADJUSTMENT, SYSTEM_CATEGORY_UNCATEGORIZED } from '@/constants';
 import { computeAccountBalance } from '@/services/balance/computeAccountBalance';
 import { solveAdjustment } from '@/services/balance/solveAdjustment';
 import { AppDataRepository } from '@/storage/AppDataRepository';
@@ -246,6 +246,87 @@ describe('categorías', () => {
     const cat = useAppStore.getState().categories.find((c) => c.id === SYSTEM_CATEGORY_ADJUSTMENT);
     expect(cat?.name).toBe('Ajuste de saldo');
     expect(cat?.archivedAt).toBeNull();
+  });
+
+  it('sin destino, los movimientos caen en "Sin categoría" y NO se pierden', () => {
+    // El caso por defecto: el usuario archiva sin elegir a dónde. Nunca puede
+    // quedar un movimiento apuntando a una categoría archivada, porque
+    // desaparecería de todos los desgloses por categoría.
+    const accountId = addTestAccount();
+    const catId = useAppStore.getState().addCategory({ name: 'Efímera' });
+    useAppStore.getState().addTransaction({
+      type: 'expense', amount: 12000, date: '2026-06-01', accountId, categoryId: catId,
+    });
+
+    useAppStore.getState().archiveCategory(catId);
+
+    const state = useAppStore.getState();
+    expect(state.transactions).toHaveLength(1);
+    expect(state.transactions[0]?.categoryId).toBe(SYSTEM_CATEGORY_UNCATEGORIZED);
+  });
+
+  it('archivar una categoría archiva también sus subcategorías', () => {
+    // Una subcategoría viva colgando de una categoría archivada se ofrecería
+    // en el formulario sin que su categoría exista ya.
+    const catId = useAppStore.getState().addCategory({ name: 'Comida' });
+    const subId = useAppStore.getState().addSubcategory({ categoryId: catId, name: 'Mercado' });
+
+    useAppStore.getState().archiveCategory(catId);
+
+    const sub = useAppStore.getState().subcategories.find((s) => s.id === subId);
+    expect(sub?.archivedAt).not.toBeNull();
+  });
+
+  it('los movimientos pierden la subcategoría al reasignarse, no la arrastran', () => {
+    // Mantener "Mercado" tras mover el gasto a "Otros" dejaría una
+    // subcategoría que no pertenece a su nueva categoría.
+    const accountId = addTestAccount();
+    const catId = useAppStore.getState().addCategory({ name: 'Comida' });
+    const subId = useAppStore.getState().addSubcategory({ categoryId: catId, name: 'Mercado' });
+    useAppStore.getState().addTransaction({
+      type: 'expense', amount: 50000, date: '2026-06-01', accountId,
+      categoryId: catId, subcategoryId: subId,
+    });
+
+    useAppStore.getState().archiveCategory(catId, 'otros');
+
+    const tx = useAppStore.getState().transactions[0];
+    expect(tx?.categoryId).toBe('otros');
+    expect(tx?.subcategoryId).toBeNull();
+  });
+
+  it('archivar SÓLO una subcategoría conserva la categoría del movimiento', () => {
+    const accountId = addTestAccount();
+    const catId = useAppStore.getState().addCategory({ name: 'Comida' });
+    const subId = useAppStore.getState().addSubcategory({ categoryId: catId, name: 'Mercado' });
+    useAppStore.getState().addTransaction({
+      type: 'expense', amount: 50000, date: '2026-06-01', accountId,
+      categoryId: catId, subcategoryId: subId,
+    });
+
+    useAppStore.getState().archiveSubcategory(subId);
+
+    const tx = useAppStore.getState().transactions[0];
+    expect(tx?.categoryId).toBe(catId); // el nivel 1 se mantiene
+    expect(tx?.subcategoryId).toBeNull(); // sólo se pierde el nivel 2
+  });
+
+  it('una categoría archivada desaparece de las activas pero sigue existiendo', () => {
+    // Borrado LÓGICO: los movimientos antiguos deben poder resolver su nombre.
+    const catId = useAppStore.getState().addCategory({ name: 'Temporal' });
+    useAppStore.getState().archiveCategory(catId);
+
+    const state = useAppStore.getState();
+    expect(state.categories.some((c) => c.id === catId)).toBe(true);
+    expect(state.categories.find((c) => c.id === catId)?.archivedAt).not.toBeNull();
+  });
+
+  it('restaurar una categoría la devuelve a la circulación', () => {
+    const catId = useAppStore.getState().addCategory({ name: 'Temporal' });
+    useAppStore.getState().archiveCategory(catId);
+    useAppStore.getState().restoreCategory(catId);
+
+    expect(useAppStore.getState().categories.find((c) => c.id === catId)?.archivedAt).toBeNull();
   });
 });
 

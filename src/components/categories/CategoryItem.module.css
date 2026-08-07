@@ -1,0 +1,71 @@
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  border-radius: var(--shape-lg);
+  background: var(--color-surface-container);
+  border: 1px solid var(--color-outline);
+  text-align: left;
+  color: inherit;
+  min-height: var(--layout-touch-target);
+}
+
+.item:active {
+  background: var(--color-surface-container-high);
+}
+
+/* Las de sistema se atenúan: se pueden mirar, no editar. */
+.system {
+  opacity: 0.72;
+}
+
+.icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--shape-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-semibold);
+  min-width: 0;
+}
+
+.badge {
+  flex-shrink: 0;
+  font-size: var(--font-size-label-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-on-surface-variant);
+  background: var(--color-surface-container-highest);
+  border-radius: var(--shape-full);
+  padding: 1px var(--space-2);
+}
+
+.meta {
+  display: block;
+  font-size: var(--font-size-label);
+  color: var(--color-on-surface-variant);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--color-on-surface-variant);
+}

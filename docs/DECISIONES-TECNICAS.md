@@ -264,6 +264,34 @@ Ninguno de estos avisa: la app simplemente no arranca, o arranca la antigua. Un 
 
 ---
 
+## ADR-018 — Archivar una categoría reasigna sus movimientos; nunca se borra físicamente
+
+**Decisión.** `archiveCategory(id, reassignTo?)` marca `archivedAt` **y** mueve todos los movimientos que la usaban a la categoría destino (o a `sys_sin_categoria` si el usuario no elige ninguna). Las subcategorías hijas se archivan con ella, y los movimientos reasignados pierden su `subcategoryId`.
+
+**Por qué no un borrado físico.** Dejaría cientos de movimientos apuntando a un id inexistente: no desaparecen de la lista, pero sí de todo desglose por categoría, y su gasto deja de sumar en los informes sin que nada avise. El usuario descubriría el agujero semanas después, cuadrando un mes.
+
+**Por qué reasignar es obligatorio y no opcional.** Un movimiento apuntando a una categoría *archivada* tiene el mismo problema en menor grado: sigue existiendo pero se vuelve invisible en los desgloses. Por eso el store reasigna siempre, con o sin destino elegido.
+
+**Por qué se pierde la subcategoría al reasignar.** «Mercado» pertenece a «Comida»; si el gasto pasa a «Otros», conservarla dejaría una subcategoría que no cuelga de su categoría. Archivar sólo la subcategoría sí conserva el nivel 1 — se pierde el detalle, no la clasificación.
+
+**La interfaz muestra el número de movimientos afectados antes de confirmar.** Sin ese dato, alguien archiva «Comida» creyéndola vacía y reclasifica 200 gastos sin enterarse.
+
+**Verificado en navegador** sobre la build de producción: archivar «Comida» (2 movimientos) con destino «Otros» dejó 10 movimientos antes y 10 después, los 2 en «Otros», la categoría archivada pero presente en los datos, y fuera del formulario de movimientos.
+
+---
+
+## ADR-019 — Paleta cerrada e iconos curados, no selectores libres
+
+**Decisión.** `ColorPicker` ofrece los 16 colores de `PALETTE`; `IconPicker` ofrece `PICKABLE_ICONS`, un subconjunto del registro.
+
+**Por qué no `<input type="color">`.** Deja elegir los 16 millones, incluidos los que hacen el texto ilegible encima o desaparecen contra el fondo oscuro. Con una paleta comprobada, cualquier elección se ve bien y la app conserva un aspecto coherente en vez de un arcoíris accidental.
+
+**Por qué los iconos son un subconjunto y no `Object.keys(ICON_REGISTRY)`.** Ofrecer los de navegación o los de acción permitiría poner una papelera o una flecha de "atrás" como icono de una categoría. Tampoco se ofrece `cat-ajuste`: es de la categoría de sistema, y verlo repetido haría ilegible el historial de ajustes.
+
+**El caso que no se podía romper: los emojis heredados.** Las categorías migradas de v1 guardan un emoji en `icon` (`'🍔'`), no una clave del registro. Si el selector sólo mostrara sus opciones, el usuario abriría el formulario, no vería nada marcado, y al tocar cualquier icono perdería su emoji sin haberlo pedido. `IconPicker` antepone el valor actual cuando no reconoce la clave, lo marca como seleccionado y lo explica.
+
+---
+
 ## Decisiones pendientes (se resolverán en su fase)
 
 | Tema | Fase | Nota |

@@ -1,0 +1,38 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-on-surface-variant);
+}
+
+.grid {
+  display: grid;
+  /* `auto-fill` con un mínimo: en pantallas estrechas caben menos por fila,
+     sin media queries y sin que ninguna muestra se deforme. */
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  gap: var(--space-2);
+}
+
+.swatch {
+  aspect-ratio: 1;
+  border-radius: var(--shape-md);
+  /* Borde transparente siempre presente: si sólo apareciera al seleccionar,
+     la muestra cambiaría de tamaño al elegirla y la rejilla daría un salto. */
+  border: 2px solid transparent;
+  transition: transform var(--motion-duration-short) var(--motion-easing-standard);
+}
+
+.swatch:active {
+  transform: scale(0.92);
+}
+
+.swatchActive {
+  border-color: var(--color-on-surface);
+  /* Separa el borde del propio color, para que se distinga en cualquier tono. */
+  box-shadow: 0 0 0 2px var(--color-surface) inset;
+}

@@ -46,3 +46,10 @@ export type { AmountFieldProps } from './AmountField';
 
 export { Select } from './Select';
 export type { SelectOption, SelectProps } from './Select';
+
+// Selectores de apariencia (Fase 11).
+export { ColorPicker } from './ColorPicker';
+export type { ColorPickerProps } from './ColorPicker';
+
+export { IconPicker } from './IconPicker';
+export type { IconPickerProps } from './IconPicker';

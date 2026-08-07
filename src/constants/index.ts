@@ -2,7 +2,7 @@
 
 export { ACCOUNT_TYPE_META, DEFAULT_ACCOUNT_TYPE } from './accountTypes';
 export { createDefaultSettings } from './defaultSettings';
-export { ICON_REGISTRY, resolveIcon } from './icons';
+export { ICON_REGISTRY, PICKABLE_ICONS, resolveIcon } from './icons';
 export type { IconKey } from './icons';
 export {
   AMOUNT_DECIMALS,

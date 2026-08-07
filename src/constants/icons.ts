@@ -153,6 +153,43 @@ export const ICON_REGISTRY = {
  *  (emojis heredados de v1): por eso los modelos tipan `icon` como `string`. */
 export type IconKey = keyof typeof ICON_REGISTRY;
 
+/**
+ * Iconos que se le ofrecen al usuario para sus categorías y cuentas.
+ *
+ * Es un SUBCONJUNTO deliberado del registro, no `Object.keys(ICON_REGISTRY)`.
+ * Ofrecer los de navegación o los de acción dejaría poner una papelera o una
+ * flecha de "atrás" como icono de una categoría de gasto: técnicamente
+ * funciona, visualmente confunde.
+ *
+ * `cat-ajuste` tampoco está: es de la categoría de sistema y verlo repetido en
+ * una categoría del usuario haría ilegible el historial de ajustes.
+ */
+export const PICKABLE_ICONS: readonly IconKey[] = [
+  'cat-comida',
+  'cat-transporte',
+  'cat-vivienda',
+  'cat-entretenimiento',
+  'cat-salud',
+  'cat-compras',
+  'cat-servicios',
+  'cat-otros',
+  'cat-salario',
+  'cat-freelance',
+  'cat-regalo',
+  'cat-inversion',
+  'cat-otro-ingreso',
+  'bank',
+  'wallet',
+  'card',
+  'cash',
+  'savings',
+  'calendar',
+  'clock',
+  'note',
+  'up',
+  'down',
+];
+
 /** Devuelve el componente de una clave, o `undefined` si no está registrada
  *  (en cuyo caso <Icon> hace el fallback a texto literal). */
 export function resolveIcon(name: string): LucideIcon | undefined {
