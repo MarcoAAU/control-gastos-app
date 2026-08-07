@@ -33,6 +33,22 @@ export function useAccount(id: ID | undefined): Account | undefined {
 }
 
 /**
+ * Índice de TODAS las cuentas, archivadas incluidas, para resolver nombres.
+ *
+ * ⚠️ NO USAR PARA OFRECER OPCIONES AL USUARIO — para eso está `useAccounts`.
+ *
+ * La distinción importa: al desconectar una cuenta sus movimientos se
+ * conservan, y si el índice sólo tuviera las activas esos movimientos pasarían
+ * a mostrar "—". El dato existe (la cuenta está archivada, no borrada), así que
+ * ocultarlo sería tirar información que tenemos y dejar el historial ilegible.
+ * En v1 no había alternativa porque la cuenta se borraba de verdad.
+ */
+export function useAccountLookup(): Map<ID, Account> {
+  const accounts = useAppStore((state) => state.accounts);
+  return useMemo(() => indexById(accounts), [accounts]);
+}
+
+/**
  * Saldo actual de cada cuenta, en una sola pasada sobre el libro.
  *
  * Se recalcula sólo cuando cambian las cuentas o los movimientos, no en cada

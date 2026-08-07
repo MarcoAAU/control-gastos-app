@@ -1,5 +1,6 @@
 import { SYSTEM_CATEGORY_ADJUSTMENT } from '@/constants';
 import type { ID, ISODate, ISOTime, Transaction, TransactionType } from '@/models';
+import { solveAdjustment } from '@/services/balance/solveAdjustment';
 import { createId } from '@/services/id/createId';
 import { removeById, updateById } from '@/utils/collections';
 import type { SliceCreator } from '../types';
@@ -49,8 +50,11 @@ export interface TransactionsSlice {
    *  · es auditable: queda en el libro, con fecha.
    *
    * Reescribir el pasado cambiaría retroactivamente todos los reportes y la
-   * curva de evolución del saldo. `currentBalance` lo calcula quien llama con
-   * `computeAccountBalance` (el store no importa services de saldo).
+   * curva de evolución del saldo.
+   *
+   * `currentBalance` lo calcula quien llama con `computeAccountBalance`: el
+   * store no puede derivarlo por sí mismo sin recorrer el libro entero en cada
+   * acción, y quien pinta la pantalla ya lo tiene calculado.
    *
    * Devuelve `null` si no hace falta ajuste.
    */
@@ -138,8 +142,17 @@ export const createTransactionsSlice: SliceCreator<TransactionsSlice> = (set, ge
   },
 
   adjustAccountBalance({ accountId, currentBalance, targetBalance, date, notes }) {
-    const delta = targetBalance - currentBalance;
-    if (delta === 0) return null;
+    // La ARITMÉTICA vive en `solveAdjustment`, no aquí. La pantalla usa esa
+    // misma función para anunciar al usuario cuánto se va a registrar antes de
+    // que confirme; si el store repitiera la cuenta por su lado, el importe
+    // anunciado y el registrado podrían dejar de coincidir — que en una app de
+    // dinero es de los errores que destruyen la confianza.
+    const plan = solveAdjustment(currentBalance, targetBalance);
+    // Se extrae a una constante: TypeScript descarta el estrechamiento de
+    // `plan.direction` dentro del callback de `set`, porque es una propiedad
+    // mutable y podría cambiar antes de que el callback se ejecute.
+    const direction = plan.direction;
+    if (!plan.needed || direction === null) return null;
 
     const id = createId();
     const now = nowInstant();
@@ -148,8 +161,8 @@ export const createTransactionsSlice: SliceCreator<TransactionsSlice> = (set, ge
         ...state.transactions,
         {
           id,
-          type: delta > 0 ? 'income' : 'expense',
-          amount: Math.abs(delta),
+          type: direction,
+          amount: plan.amount,
           date,
           time: '00:00',
           accountId,

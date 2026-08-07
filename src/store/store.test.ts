@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SYSTEM_CATEGORY_ADJUSTMENT, STORAGE_KEY } from '@/constants';
 import { computeAccountBalance } from '@/services/balance/computeAccountBalance';
+import { solveAdjustment } from '@/services/balance/solveAdjustment';
 import { AppDataRepository } from '@/storage/AppDataRepository';
 import { createMemoryAdapter } from '@/storage/adapters/memoryAdapter';
 import { StorageError, type StorageAdapter } from '@/storage/StorageAdapter';
@@ -180,6 +181,32 @@ describe('ajuste de saldo (ADR-004)', () => {
     const id = addTestAccount(1000000);
     const result = useAppStore.getState().adjustAccountBalance({
       accountId: id, currentBalance: 1000000, targetBalance: 1000000, date: '2026-06-15',
+    });
+    expect(result).toBeNull();
+    expect(useAppStore.getState().transactions).toEqual([]);
+  });
+
+  it('el ajuste que registra el store coincide con el que calcula solveAdjustment', () => {
+    // Este test es el que mantiene unidas las dos mitades del ajuste: el
+    // importe que la pantalla ANUNCIA al usuario sale de `solveAdjustment`, y
+    // el que se REGISTRA sale del store. Si alguna vez dejaran de coincidir,
+    // la app diría "se registró un ajuste de $200.000" y guardaría otra cosa.
+    const id = addTestAccount(1000000);
+    const plan = solveAdjustment(1000000, 1200000);
+
+    useAppStore.getState().adjustAccountBalance({
+      accountId: id, currentBalance: 1000000, targetBalance: 1200000, date: '2026-06-15',
+    });
+
+    const registrado = useAppStore.getState().transactions[0]!;
+    expect(registrado.type).toBe(plan.direction);
+    expect(registrado.amount).toBe(plan.amount);
+  });
+
+  it('ignora una diferencia de céntimos en vez de guardar un ajuste de $0', () => {
+    const id = addTestAccount(1000000);
+    const result = useAppStore.getState().adjustAccountBalance({
+      accountId: id, currentBalance: 1000000, targetBalance: 1000000.4, date: '2026-06-15',
     });
     expect(result).toBeNull();
     expect(useAppStore.getState().transactions).toEqual([]);

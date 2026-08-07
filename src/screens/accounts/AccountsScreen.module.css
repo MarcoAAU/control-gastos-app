@@ -1,0 +1,101 @@
+.totalCard {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: var(--space-4);
+}
+
+.totalLabel {
+  font-size: var(--font-size-label);
+  color: var(--color-on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.totalValue {
+  font-size: var(--font-size-display);
+  font-weight: var(--font-weight-black);
+  font-variant-numeric: tabular-nums;
+}
+
+.totalNegative {
+  color: var(--color-error);
+}
+
+.totalHint {
+  font-size: var(--font-size-label);
+  color: var(--color-on-surface-variant);
+  margin-top: var(--space-1);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* ── Hoja de una cuenta ─────────────────────────────────────────────────── */
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) 0 var(--space-4);
+  border-bottom: 1px solid var(--color-outline-variant);
+  margin-bottom: var(--space-2);
+}
+
+.detailBalance {
+  font-size: var(--font-size-headline);
+  font-weight: var(--font-weight-black);
+  font-variant-numeric: tabular-nums;
+}
+
+.detailMeta {
+  font-size: var(--font-size-body-sm);
+  color: var(--color-on-surface-variant);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.actionRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--shape-md);
+  color: var(--color-on-surface);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  text-align: left;
+  min-height: var(--layout-touch-target);
+}
+
+.actionRow:active {
+  background: var(--color-surface-container-high);
+}
+
+.actionRow:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.actionDanger {
+  color: var(--color-error);
+}
+
+.confirmText {
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-on-surface-variant);
+  padding: var(--space-2) 0;
+}
+
+.confirmText strong {
+  color: var(--color-on-surface);
+  font-weight: var(--font-weight-semibold);
+}

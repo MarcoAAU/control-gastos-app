@@ -11,11 +11,12 @@ import {
 } from '@/components/ui';
 import { TransactionForm } from '@/components/transactions/TransactionForm';
 import { TransactionList } from '@/components/transactions/TransactionList';
+import { SYSTEM_CATEGORY_ADJUSTMENT } from '@/constants';
 import { applyFilters } from '@/services/filters/applyFilters';
+import { periodTotals } from '@/services/metrics/periodTotals';
 import { useAppStore } from '@/store';
-import { useAccounts } from '@/store/hooks/useAccounts';
+import { useAccountLookup, useAccounts } from '@/store/hooks/useAccounts';
 import { useCategories, useTransactions } from '@/store/hooks/useTransactions';
-import { indexById } from '@/utils/collections';
 import { formatDateTime } from '@/utils/date';
 import { formatMoney, formatSignedMoney } from '@/utils/money';
 import { cn } from '@/utils/cn';
@@ -61,7 +62,11 @@ export default function TransactionsScreen() {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [accountFilter, setAccountFilter] = useState('');
 
-  const accountById = useMemo(() => indexById(accounts), [accounts]);
+  // Para RESOLVER nombres se usan todas las cuentas (incluidas las
+  // desconectadas), y para OFRECER opciones sólo las activas: un movimiento de
+  // una cuenta desconectada debe seguir diciendo de cuál era, pero esa cuenta
+  // ya no debe poder elegirse en el formulario ni en el filtro.
+  const accountById = useAccountLookup();
 
   const visible = useMemo(
     () =>
@@ -70,6 +75,12 @@ export default function TransactionsScreen() {
         {
           ...(categoryFilter ? { categoryIds: [categoryFilter] } : {}),
           ...(accountFilter ? { accountIds: [accountFilter] } : {}),
+          // Los ajustes se ocultan por defecto —son contabilidad interna— pero
+          // filtrar POR la categoría "Ajuste de saldo" sólo puede significar
+          // que el usuario quiere verlos. Sin esta línea quedarían registrados
+          // e invisibles: imposibles de revisar y, sobre todo, de borrar, que
+          // es lo que los hace reversibles (ADR-004).
+          includeAdjustments: categoryFilter === SYSTEM_CATEGORY_ADJUSTMENT,
         },
         { categoryById },
       ),
@@ -78,15 +89,11 @@ export default function TransactionsScreen() {
 
   // Totales de lo que se está VIENDO, no de todo el libro: si hay un filtro
   // puesto, un total global sería engañoso.
-  const totals = useMemo(() => {
-    let income = 0;
-    let expense = 0;
-    for (const tx of visible) {
-      if (tx.type === 'income') income += tx.amount;
-      else expense += tx.amount;
-    }
-    return { income, expense, net: income - expense };
-  }, [visible]);
+  //
+  // Se usa `periodTotals` en vez de sumar aquí a mano para que los ajustes
+  // queden fuera también cuando están a la vista: un ajuste al alza no es un
+  // ingreso, y contarlo aquí sería reproducir en pequeño el error de v1.
+  const totals = useMemo(() => periodTotals(visible), [visible]);
 
   const editing = sheet.kind === 'edit' ? sheet.transaction : undefined;
   const selected =

@@ -1,0 +1,84 @@
+.card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  border-radius: var(--shape-lg);
+  background: var(--color-surface-container);
+  border: 1px solid var(--color-outline);
+  text-align: left;
+  color: inherit;
+  min-height: var(--layout-touch-target);
+  transition: background-color var(--motion-duration-short) var(--motion-easing-standard);
+}
+
+.card:active {
+  background: var(--color-surface-container-high);
+}
+
+.icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--shape-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.info {
+  flex: 1;
+  /* Sin `min-width: 0` un nombre largo desborda el flex en vez de recortarse. */
+  min-width: 0;
+}
+
+.name {
+  display: block;
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  display: block;
+  font-size: var(--font-size-label);
+  color: var(--color-on-surface-variant);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.balanceWrap {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.balance {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+  /* Cifras de ancho fijo: sin esto las columnas de saldos bailan al cambiar. */
+  font-variant-numeric: tabular-nums;
+}
+
+.balanceNegative {
+  color: var(--color-error);
+}
+
+.excluded {
+  font-size: var(--font-size-label-sm);
+  color: var(--color-on-surface-variant);
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--color-on-surface-variant);
+}

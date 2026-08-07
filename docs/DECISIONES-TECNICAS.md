@@ -69,7 +69,11 @@ Y se separan explícitamente los dos conceptos que v1 confundía:
 
 **Por qué no reescribir `initialBalance`.** Reescribir el saldo inicial **reescribe el pasado**: todos los reportes históricos y la gráfica de evolución del saldo cambiarían retroactivamente, y el usuario perdería la respuesta a "¿por qué cambió mi saldo?". Con el ajuste como transacción fechada: el pasado queda intacto, hay rastro de auditoría, y **es reversible** (borrar el ajuste deshace el cambio).
 
-**La salvaguarda clave.** `isAdjustment: true` excluye esa transacción de *todos* los totales de ingresos/gastos, de las gráficas por categoría y del gasto promedio diario. Solo afecta al saldo. En la lista aparece con estilo distinto y etiqueta "Ajuste". Sin esta exclusión, ajustar el saldo inflaría artificialmente los "ingresos del mes" — que es exactamente la clase de confusión que originó la queja de v1.
+**La salvaguarda clave.** `isAdjustment: true` excluye esa transacción de *todos* los totales de ingresos/gastos, de las gráficas por categoría y del gasto promedio diario. Solo afecta al saldo. Sin esta exclusión, ajustar el saldo inflaría artificialmente los "ingresos del mes" — que es exactamente la clase de confusión que originó la queja de v1.
+
+**Dónde se ve el ajuste (precisado en la Fase 8).** Los ajustes se **ocultan** de la lista de Movimientos por defecto: son contabilidad interna y mezclarlos con los gastos reales del usuario es justo lo que se quiere evitar. Pero ocultarlos siempre los volvería **irreversibles en la práctica** — no se puede borrar lo que no se puede ver, y la reversibilidad es la mitad del valor de esta decisión. Solución: filtrar por la categoría «Ajuste de saldo» los revela (`includeAdjustments`), y aun así el resumen de la pantalla los sigue contando como $0 de ingreso y $0 de gasto. El texto de confirmación del ajuste le dice al usuario exactamente dónde encontrarlo.
+
+**Una sola aritmética.** El importe que la pantalla **anuncia** antes de confirmar y el que el store **registra** salen ambos de `services/balance/solveAdjustment.ts`. El store no recalcula el delta por su cuenta: en una app de dinero, anunciar $250.000 y guardar otra cosa es de los errores que destruyen la confianza. Un test compara ambas salidas (`store.test.ts`).
 
 **Nota de UI (Fase 12):** "Ajustar saldo actual" (registra un ajuste hoy) y "Cambiar saldo inicial" (sí reescribe el pasado, con confirmación explícita) son dos acciones distintas y deben distinguirse claramente en la interfaz.
 
@@ -185,6 +189,23 @@ Ninguna fase se da por cerrada si esa cadena no pasa limpia.
 **Consecuencia visible.** El texto de los botones principales pasa de blanco a azul muy oscuro. Es el único cambio cromático deliberado respecto a v1 y está anotado en `CHECKLIST-REGRESION.md` como reemplazo intencional, no como regresión.
 
 **Verificación.** Auditoría automática sobre el kitchensink: 121 elementos con texto medidos contra su fondo efectivo, en ambos temas, 0 incumplimientos (peor caso normalizado 5.92 en oscuro, 5.07 en claro).
+
+---
+
+## ADR-013 — "Desconectar cuenta" es un borrado lógico, y los movimientos conservan su nombre
+
+**Decisión.** Desconectar una cuenta la marca con `archivedAt` en vez de eliminarla. Deja de aparecer en la lista, sale del "Saldo total" y no se ofrece en formularios ni filtros — pero el registro sigue existiendo.
+
+**Por qué no borrarla de verdad.** v1 la eliminaba del array (`app.js:593`) y sus movimientos quedaban apuntando a un id inexistente: la lista los mostraba con un guion, y el usuario perdía para siempre el dato de a qué cuenta pertenecía cada gasto. El borrado lógico conserva la integridad referencial sin obligar a decidir qué hacer con el historial.
+
+**La consecuencia que hay que cablear a mano.** Con la cuenta archivada, un índice construido sólo con las cuentas activas daría el mismo guion que v1 — se habría conservado el dato y aun así no se mostraría. Por eso hay **dos accesos distintos** y usarlos al revés es un error:
+
+| Hook | Contiene | Para qué |
+|---|---|---|
+| `useAccounts()` | sólo activas | **Ofrecer** opciones: formularios, filtros, lista de cuentas |
+| `useAccountLookup()` | todas, archivadas incluidas | **Resolver** nombres de movimientos ya existentes |
+
+**Verificación (Fase 8).** Se desconectó una cuenta con 2 movimientos: los movimientos siguen ahí y siguen diciendo "Tarjeta Nu"; la cuenta desaparece del selector de filtro; el saldo total se recalcula excluyéndola.
 
 ---
 

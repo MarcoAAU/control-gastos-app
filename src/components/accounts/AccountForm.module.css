@@ -1,0 +1,78 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-top: var(--space-2);
+}
+
+/* Banco ya elegido en el paso anterior: se muestra, no se reescribe. */
+.bankBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  align-self: flex-start;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--shape-full);
+  background: var(--color-surface-container-high);
+  border: 1px solid var(--color-outline);
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-on-surface-variant);
+}
+
+.bankDot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--shape-full);
+  flex-shrink: 0;
+}
+
+.note {
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-on-surface-variant);
+  padding: var(--space-3);
+  border-radius: var(--shape-md);
+  background: var(--color-surface-container-high);
+  border: 1px solid var(--color-outline);
+}
+
+.note strong {
+  color: var(--color-on-surface);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Casilla local en vez de un primitivo <Checkbox>: es el único sitio de la app
+   que lleva una. Cuando aparezca la segunda (Fase 11) se extrae, siguiendo la
+   misma regla que se aplicó a los tokens en la Fase 2. */
+.checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  cursor: pointer;
+  /* El área pulsable cubre el texto entero, no sólo la casilla de 18px. */
+  min-height: var(--layout-touch-target);
+  padding: var(--space-1) 0;
+}
+
+.checkbox input {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: var(--color-primary);
+}
+
+.checkboxLabel {
+  display: block;
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+}
+
+.checkboxHint {
+  display: block;
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-on-surface-variant);
+  margin-top: 2px;
+}
