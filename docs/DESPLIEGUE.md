@@ -104,12 +104,20 @@ git checkout main
 ```
 
 ```bash
-git merge feat/v2-react
+git merge --no-ff feat/v2-react -m "Merge v2: React rewrite, parity with v1"
 ```
 
 ```bash
 git push origin main
 ```
+
+> **Por qué `--no-ff` y no un `merge` normal.** `main` no tiene ningún commit
+> que la rama no tenga, así que un merge normal sería un *fast-forward*: movería
+> la etiqueta `main` sin crear un commit de fusión. Funciona, pero deja el
+> historial sin ninguna marca de cuándo entró v2, y —más importante— hace
+> **imposible** el `git revert -m 1` de más abajo, porque no habría ningún merge
+> que revertir. Con `--no-ff` hay un commit de fusión y la vuelta atrás es un
+> solo comando.
 
 Al empujar, el workflow `Desplegar en GitHub Pages` arranca solo. Antes de
 publicar nada ejecuta la compuerta completa —lint, tipos, 226 tests, build,
@@ -138,11 +146,19 @@ tienes tus datos**:
 ### Si algo sale mal
 
 Tus datos de v1 siguen intactos en `gastos_app_data_v1`: la migración nunca los
-borra. Para volver atrás, revierte el merge y vuelve a empujar:
+borra. Para volver a publicar v1, revierte el commit de fusión y empuja:
 
 ```bash
-git revert -m 1 HEAD && git push origin main
+git revert -m 1 HEAD -m "Volver a v1 mientras se investiga"
 ```
+
+```bash
+git push origin main
+```
+
+El `-m 1` significa "quédate con el lado de `main` anterior al merge". Esto
+**no borra nada**: añade un commit que deshace los cambios, así que `feat/v2-react`
+sigue intacta y volver a intentarlo es otro merge.
 
 ---
 
