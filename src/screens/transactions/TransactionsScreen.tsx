@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import type { Transaction } from '@/models';
 import { ScreenContainer, TopBar, Fab } from '@/components/layout';
 import {
@@ -61,6 +62,19 @@ export default function TransactionsScreen() {
   const [sheet, setSheet] = useState<SheetState>({ kind: 'closed' });
   const [categoryFilter, setCategoryFilter] = useState('');
   const [accountFilter, setAccountFilter] = useState('');
+
+  // El `+` del Inicio navega aquí pidiendo que se abra el formulario.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const openCreateRequested = (location.state as { openCreate?: boolean } | null)?.openCreate;
+
+  useEffect(() => {
+    if (!openCreateRequested) return;
+    setSheet({ kind: 'create' });
+    // Se consume la intención de inmediato: si se quedara en el historial,
+    // volver atrás a esta pantalla reabriría el formulario solo.
+    navigate(location.pathname, { replace: true, state: null });
+  }, [openCreateRequested, navigate, location.pathname]);
 
   // Para RESOLVER nombres se usan todas las cuentas (incluidas las
   // desconectadas), y para OFRECER opciones sólo las activas: un movimiento de

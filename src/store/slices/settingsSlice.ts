@@ -21,6 +21,28 @@ export interface SettingsSlice {
   markExported(): void;
   /** Descarta los avisos de migración una vez vistos. */
   dismissMigrationWarnings(): void;
+
+  /**
+   * Sustituye TODO el documento. Es lo que hace "importar un respaldo".
+   *
+   * ⚠️ Vive en este slice, y no en uno propio, porque `schemaVersion` y `meta`
+   * son suyos y una importación tiene que reemplazarlos junto con el resto: un
+   * documento con las cuentas del respaldo y la `schemaVersion` anterior sería
+   * incoherente.
+   *
+   * ⚠️ NO VALIDA NADA. Quien llame debe haber pasado los datos por
+   * `parseBackup` y por los type guards. Aquí sólo se asigna.
+   */
+  replaceAllData(data: AppData): void;
+
+  /**
+   * Deja el documento vacío conservando las preferencias.
+   *
+   * El tema o el inicio de semana no son datos financieros: borrarlos no
+   * protege nada y sí obliga al usuario a reconfigurar la app después de una
+   * operación que ya es desagradable.
+   */
+  clearAllData(): void;
 }
 
 export const createSettingsSlice: SliceCreator<SettingsSlice> = (set) => ({
@@ -60,5 +82,33 @@ export const createSettingsSlice: SliceCreator<SettingsSlice> = (set) => ({
         ? {}
         : { meta: { ...state.meta, migrationWarnings: [] } },
     );
+  },
+
+  replaceAllData(data) {
+    set({
+      schemaVersion: data.schemaVersion,
+      banks: data.banks ?? [],
+      accounts: data.accounts ?? [],
+      categories: data.categories ?? [],
+      subcategories: data.subcategories ?? [],
+      transactions: data.transactions ?? [],
+      history: data.history ?? [],
+      settings: data.settings ?? createDefaultSettings(),
+      meta: { ...data.meta, updatedAt: new Date().toISOString() },
+    });
+  },
+
+  clearAllData() {
+    set((state) => ({
+      banks: [],
+      accounts: [],
+      categories: [],
+      subcategories: [],
+      transactions: [],
+      history: [],
+      // Las preferencias sobreviven a propósito: ver la nota de la interfaz.
+      settings: state.settings,
+      meta: { ...state.meta, updatedAt: new Date().toISOString() },
+    }));
   },
 });

@@ -40,8 +40,16 @@ export interface AppData {
   meta: {
     createdAt: ISOInstant;
     updatedAt: ISOInstant;
-    /** `'legacy'` si estos datos vienen de migrar el blob de v1. */
-    migratedFrom: 'legacy' | null;
+    /**
+     * De dónde salió este documento.
+     *  · `'legacy'` — migrado del blob de v1.
+     *  · `'demo'` — datos de EJEMPLO cargados a propósito por el usuario. Deja
+     *    rastro de que las cifras son ficticias: sin esta marca, un usuario que
+     *    cargó la demo y luego reporta "mis saldos están mal" sería
+     *    indistinguible de un fallo real de cálculo.
+     *  · `null` — datos propios del usuario desde el principio.
+     */
+    migratedFrom: 'legacy' | 'demo' | null;
     /**
      * Incidencias no fatales de la migración ("se descartó 1 movimiento con
      * importe inválido"). Se muestran al usuario una vez. Nunca se aborta una

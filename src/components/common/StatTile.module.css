@@ -1,0 +1,42 @@
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-radius: var(--shape-md);
+  background: var(--color-surface-container);
+  border: 1px solid var(--color-outline);
+  min-width: 0;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-label);
+  color: var(--color-on-surface-variant);
+  white-space: nowrap;
+}
+
+.value {
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  /* Una cifra larga se recorta en vez de romper la rejilla de tres columnas. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.income,
+.positive {
+  color: var(--color-success);
+}
+
+.expense {
+  color: var(--color-on-surface);
+}
+
+.negative {
+  color: var(--color-error);
+}

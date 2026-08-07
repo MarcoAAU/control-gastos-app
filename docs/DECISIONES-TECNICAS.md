@@ -209,6 +209,30 @@ Ninguna fase se da por cerrada si esa cadena no pasa limpia.
 
 ---
 
+## ADR-014 — Las gráficas se cargan por detrás de las cifras, no junto a ellas
+
+**Decisión.** Recharts vive en `screens/dashboard/sections/ChartsSection.tsx`, cargado con `lazy()`. Ninguna pantalla lo importa de forma estática.
+
+**El problema que resolvió.** La carga diferida por pantalla (Fase 6) no bastaba: el Inicio **es** la pantalla de arranque, así que meter los gráficos en su chunk dejaba a todo el mundo esperando ~100 kB gz antes de ver su saldo. Medido: el chunk del Inicio pesaba 107 kB gz.
+
+**Después de aislarlos:** Inicio 3,5 kB gz · ChartsSection 104 kB gz · carga inicial 93,8 kB gz. El saldo, los totales y los movimientos se pintan de inmediato; las gráficas llegan después, en un hueco ya reservado para que nada salte de sitio.
+
+**Regla.** `ChartsSection` no contiene lógica, sólo presentación: recibe las series ya calculadas por `services/metrics`. Si calculara algo, ese cálculo quedaría atrapado detrás de la descarga del chunk.
+
+---
+
+## ADR-015 — Rangos de periodo civiles completos, no truncados a hoy
+
+**Decisión.** `getPeriodRange('month')` devuelve el mes entero (1 al 31), no del 1 a hoy.
+
+**Diferencia con v1.** v1 construía el rango como `[inicio, ahora + 1 día)` (`app.js:204`), así que un movimiento con fecha futura —un pago programado, una compra anotada por adelantado— no contaba en "Mes" hasta que llegaba el día. Sólo se nota si hay movimientos futuros; para "Hoy" no hay diferencia.
+
+**Por qué se cambia.** Quien anota un gasto futuro a propósito espera verlo en el total del mes. Y Seguimiento (Fase 16) necesita comparar periodos completos entre sí: con rangos truncados, comparar "este mes" contra "el mes pasado" mezclaría un tramo parcial con uno completo.
+
+**La semana empieza en lunes** (`WEEK_STARTS_ON = 1`), convenio es-CO. v1 lo tenía a mano y con domingo en algunos sitios. Fijado por tests, incluidos los bordes: semana que cruza el cambio de año, febrero bisiesto y no bisiesto.
+
+---
+
 ## Decisiones pendientes (se resolverán en su fase)
 
 | Tema | Fase | Nota |
