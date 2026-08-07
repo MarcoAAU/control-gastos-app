@@ -1,0 +1,72 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+  min-width: 0;
+}
+
+.control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--layout-touch-target);
+  padding: 0 var(--space-2) 0 var(--space-3);
+  border-radius: var(--shape-full);
+  background: var(--color-surface-container-high);
+  border: 1px solid transparent;
+  transition: border-color var(--motion-duration-short) var(--motion-easing-standard);
+}
+
+.control:focus-within {
+  border-color: var(--color-primary);
+}
+
+.icon {
+  flex-shrink: 0;
+  color: var(--color-on-surface-variant);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--color-on-surface);
+  font-size: var(--font-size-body);
+  padding: var(--space-2) 0;
+}
+
+.input::placeholder {
+  color: var(--color-on-surface-variant);
+  opacity: 0.7;
+}
+
+/* La X nativa de WebKit se solapa con la nuestra y no admite estilos. */
+.input::-webkit-search-cancel-button,
+.input::-webkit-search-decoration {
+  appearance: none;
+  display: none;
+}
+
+.clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--shape-full);
+  color: var(--color-on-surface-variant);
+}
+
+.clear:active {
+  background: var(--color-surface-container-highest);
+}
+
+.hint {
+  font-size: var(--font-size-label);
+  color: var(--color-on-surface-variant);
+  padding-left: var(--space-3);
+}

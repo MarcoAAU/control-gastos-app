@@ -50,6 +50,9 @@ export type { AmountFieldProps } from './AmountField';
 export { Select } from './Select';
 export type { SelectOption, SelectProps } from './Select';
 
+export { Chip } from './Chip';
+export type { ChipProps } from './Chip';
+
 // Selectores de apariencia (Fase 11).
 export { ColorPicker } from './ColorPicker';
 export type { ColorPickerProps } from './ColorPicker';

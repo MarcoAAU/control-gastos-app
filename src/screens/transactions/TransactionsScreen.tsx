@@ -1,19 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import type { ActiveFilterChip } from '@/services/filters/describeFilters';
 import type { Transaction } from '@/models';
 import { ScreenContainer, TopBar, Fab } from '@/components/layout';
-import {
-  Button,
-  Card,
-  EmptyState,
-  Icon,
-  Select,
-  Sheet,
-} from '@/components/ui';
+import { Button, Card, EmptyState, Icon, Sheet } from '@/components/ui';
+import { FilterBar, FilterSheet } from '@/components/filters';
 import { TransactionForm } from '@/components/transactions/TransactionForm';
 import { TransactionList } from '@/components/transactions/TransactionList';
-import { SYSTEM_CATEGORY_ADJUSTMENT } from '@/constants';
-import { applyFilters } from '@/services/filters/applyFilters';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { applyFilters, countActiveFilters } from '@/services/filters/applyFilters';
+import { describeFilters } from '@/services/filters/describeFilters';
+import { searchTransactions } from '@/services/filters/searchTransactions';
 import { periodTotals } from '@/services/metrics/periodTotals';
 import { useAppStore } from '@/store';
 import { useAccountLookup, useAccounts } from '@/store/hooks/useAccounts';
@@ -29,6 +26,7 @@ type SheetState =
   | { kind: 'create' }
   | { kind: 'edit'; transaction: Transaction }
   | { kind: 'actions'; transaction: Transaction }
+  | { kind: 'filters' }
   // La confirmación es un PASO DENTRO de la misma hoja, no un diálogo encima:
   // encadenar dos overlays es frágil (ver useBackButton) y en móvil apila dos
   // velos sobre el contenido.
@@ -60,8 +58,27 @@ export default function TransactionsScreen() {
   const showToast = useAppStore((state) => state.showToast);
 
   const [sheet, setSheet] = useState<SheetState>({ kind: 'closed' });
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [accountFilter, setAccountFilter] = useState('');
+
+  /**
+   * Los criterios viven en el STORE, no en `useState` local.
+   *
+   * Tres componentes distintos —la barra, la hoja y las fichas de criterio
+   * activo— leen y escriben los mismos filtros. Con estado local habría que
+   * bajarlo por props a través de todos ellos, y cada uno tendría su propia
+   * oportunidad de quedarse desincronizado. Con una sola fuente, quitar una
+   * ficha y desmarcar su casilla en la hoja son literalmente la misma
+   * escritura.
+   *
+   * ⚠️ Y NO SE PERSISTE (`uiSlice` está fuera de lo que se guarda). Reabrir la
+   * app con un filtro puesto de la sesión anterior enseñaría una lista
+   * recortada sin que nada explique por qué: la lectura obvia es "perdí mis
+   * movimientos".
+   */
+  const filters = useAppStore((state) => state.filters);
+  const patchFilters = useAppStore((state) => state.patchFilters);
+  const clearFilters = useAppStore((state) => state.clearFilters);
+  const search = useAppStore((state) => state.search);
+  const setSearch = useAppStore((state) => state.setSearch);
 
   // El `+` del Inicio navega aquí pidiendo que se abra el formulario.
   const location = useLocation();
@@ -82,24 +99,67 @@ export default function TransactionsScreen() {
   // ya no debe poder elegirse en el formulario ni en el filtro.
   const accountById = useAccountLookup();
 
+  /**
+   * El texto se pinta al instante; el FILTRADO espera 200 ms de reposo.
+   *
+   * Sin esto, cada pulsación recorrería todos los movimientos construyendo el
+   * texto de búsqueda de cada uno. Con el retraso, escribir "aeropuerto"
+   * dispara un recorrido en vez de diez, y el campo nunca va a tirones porque
+   * lo que se retrasa es el resultado, no la letra. Ver `useDebouncedValue`.
+   */
+  const debouncedSearch = useDebouncedValue(search, 200);
+
+  const searchContext = useMemo(
+    () => ({ categoryById, subcategoryById, accountById }),
+    [categoryById, subcategoryById, accountById],
+  );
+
+  /**
+   * Se filtra en DOS pasos, y no de una vez, por dos motivos.
+   *
+   * 1. El número. La pista del buscador dice "3 de 12", y ese 12 tiene que ser
+   *    *lo que había antes de escribir*, no el total del libro. Con el total,
+   *    buscando dentro de un filtro de agosto salía "1 de 17" mientras la
+   *    lista sin buscar decía 16 — y el 17 incluía un ajuste de saldo que el
+   *    usuario no puede ver en ninguna circunstancia. Dos cifras que no cuadran
+   *    y una de ellas imposible de verificar.
+   *
+   * 2. El coste. Los criterios cambian con un toque; el texto, con cada tecla.
+   *    Al separarlos, teclear sólo repite la búsqueda sobre la lista ya
+   *    recortada, que suele ser una fracción del total.
+   */
+  const matchingFilters = useMemo(
+    () => applyFilters(transactions, filters, searchContext),
+    [transactions, filters, searchContext],
+  );
+
   const visible = useMemo(
     () =>
-      applyFilters(
-        transactions,
-        {
-          ...(categoryFilter ? { categoryIds: [categoryFilter] } : {}),
-          ...(accountFilter ? { accountIds: [accountFilter] } : {}),
-          // Los ajustes se ocultan por defecto —son contabilidad interna— pero
-          // filtrar POR la categoría "Ajuste de saldo" sólo puede significar
-          // que el usuario quiere verlos. Sin esta línea quedarían registrados
-          // e invisibles: imposibles de revisar y, sobre todo, de borrar, que
-          // es lo que los hace reversibles (ADR-004).
-          includeAdjustments: categoryFilter === SYSTEM_CATEGORY_ADJUSTMENT,
-        },
-        { categoryById },
-      ),
-    [transactions, categoryFilter, accountFilter, categoryById],
+      debouncedSearch === ''
+        ? matchingFilters
+        : searchTransactions(matchingFilters, debouncedSearch, searchContext),
+    [matchingFilters, debouncedSearch, searchContext],
   );
+
+  // La insignia y las fichas describen los criterios de la HOJA, no la
+  // búsqueda: el texto ya está a la vista dentro de su cuadro, y repetirlo en
+  // una ficha sería decir dos veces lo mismo ocupando media fila.
+  const activeCount = countActiveFilters(filters);
+  const chips = useMemo(
+    () => describeFilters(filters, { accountById, categoryById, subcategoryById }),
+    [filters, accountById, categoryById, subcategoryById],
+  );
+
+  const filtering = activeCount > 0 || search !== '';
+
+  function handleRemoveChip(chip: ActiveFilterChip): void {
+    patchFilters(chip.patch);
+  }
+
+  function handleClearEverything(): void {
+    clearFilters();
+    setSearch('');
+  }
 
   // Totales de lo que se está VIENDO, no de todo el libro: si hay un filtro
   // puesto, un total global sería engañoso.
@@ -146,22 +206,20 @@ export default function TransactionsScreen() {
 
       <ScreenContainer>
         {transactions.length > 0 && (
-          <div className={styles.filters}>
-            <Select
-              label="Categoría"
-              value={categoryFilter}
-              onChange={setCategoryFilter}
-              options={categories.map((c) => ({ value: c.id, label: c.name }))}
-              placeholder="Todas"
-            />
-            <Select
-              label="Cuenta"
-              value={accountFilter}
-              onChange={setAccountFilter}
-              options={accounts.map((a) => ({ value: a.id, label: a.name }))}
-              placeholder="Todas"
-            />
-          </div>
+          <FilterBar
+            search={search}
+            onSearchChange={setSearch}
+            // El recuento sólo aparece mientras se busca. Fuera de ahí ya lo
+            // dice la línea de resumen, y decirlo dos veces es ruido.
+            searchHint={
+              search === '' ? undefined : `${visible.length} de ${matchingFilters.length}`
+            }
+            activeCount={activeCount}
+            chips={chips}
+            onOpenFilters={() => setSheet({ kind: 'filters' })}
+            onRemoveChip={handleRemoveChip}
+            onClearAll={clearFilters}
+          />
         )}
 
         {visible.length > 0 && (
@@ -182,25 +240,24 @@ export default function TransactionsScreen() {
               title={
                 transactions.length === 0
                   ? 'Todavía no hay movimientos'
-                  : 'Ningún movimiento con esos filtros'
+                  : search !== ''
+                    ? `Nada coincide con «${search}»`
+                    : 'Ningún movimiento con esos filtros'
               }
               description={
                 transactions.length === 0
                   ? noAccounts
                     ? 'Crea primero una cuenta en la pestaña Cuentas y podrás registrar tus ingresos y gastos.'
                     : 'Registra tu primer ingreso o gasto con el botón +.'
-                  : 'Prueba a quitar alguno de los filtros.'
+                  : // Se dice cuántos movimientos hay en total: es la prueba de
+                    // que no se ha perdido nada, sólo está oculto tras un
+                    // criterio. Es justo la duda que provoca una lista vacía.
+                    `Tienes ${transactions.length} ${transactions.length === 1 ? 'movimiento' : 'movimientos'} guardados. Prueba a quitar algún criterio.`
               }
               action={
-                transactions.length > 0 ? (
-                  <Button
-                    variant="tonal"
-                    onClick={() => {
-                      setCategoryFilter('');
-                      setAccountFilter('');
-                    }}
-                  >
-                    Quitar filtros
+                filtering ? (
+                  <Button variant="tonal" onClick={handleClearEverything}>
+                    Quitar filtros y búsqueda
                   </Button>
                 ) : undefined
               }
@@ -227,6 +284,18 @@ export default function TransactionsScreen() {
           }
           setSheet({ kind: 'create' });
         }}
+      />
+
+      <FilterSheet
+        open={sheet.kind === 'filters'}
+        onClose={() => setSheet({ kind: 'closed' })}
+        filters={filters}
+        onPatch={patchFilters}
+        onClearAll={clearFilters}
+        accounts={accounts}
+        categories={categories}
+        subcategories={subcategories}
+        resultCount={visible.length}
       />
 
       {/* Alta y edición comparten formulario. `key` fuerza a React a montar uno

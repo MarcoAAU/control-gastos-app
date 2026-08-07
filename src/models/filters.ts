@@ -42,6 +42,23 @@ export interface TransactionFilters {
   includeAdjustments?: boolean;
 }
 
+/**
+ * Modificación parcial de los criterios.
+ *
+ * ⚠️ NO ES `Partial<TransactionFilters>`, y la diferencia importa.
+ * Con `exactOptionalPropertyTypes` activado (tsconfig), `Partial<T>` permite
+ * OMITIR una clave pero no asignarle `undefined`. Y quitar un filtro es
+ * exactamente eso: `{ accountIds: undefined }`. Sin este tipo, "quitar el
+ * filtro de cuenta" no compilaría y habría que inventar un centinela.
+ *
+ * El slice se encarga de que las claves puestas a `undefined` desaparezcan del
+ * objeto en vez de quedarse dentro valiendo `undefined`: así contar los
+ * criterios activos sigue siendo mirar las claves que hay.
+ */
+export type FilterPatch = {
+  [K in keyof TransactionFilters]?: TransactionFilters[K] | undefined;
+};
+
 export type SortField = 'date' | 'amount' | 'description';
 export type SortDirection = 'asc' | 'desc';
 

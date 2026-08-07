@@ -1,0 +1,31 @@
+/**
+ * Los criterios activos van en una fila que se DESPLAZA en horizontal, no en
+ * varias líneas: con cinco o seis fichas, envolver empujaría la lista de
+ * movimientos media pantalla hacia abajo cada vez que se marca un filtro, y el
+ * contenido saltaría bajo el dedo.
+ */
+.row {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  /* El desplazamiento horizontal no debe arrastrar la página entera. */
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  /* Espacio para que el anillo de foco de la primera ficha no se recorte. */
+  padding: 2px var(--space-1);
+  margin: 0 calc(var(--space-1) * -1) var(--space-3);
+}
+
+.row::-webkit-scrollbar {
+  display: none;
+}
+
+.clearAll {
+  flex-shrink: 0;
+  padding: 0 var(--space-2);
+  min-height: 36px;
+  color: var(--color-primary);
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+}

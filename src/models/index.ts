@@ -30,4 +30,10 @@ export { CURRENT_SCHEMA_VERSION } from './AppData';
 export type { AppData } from './AppData';
 
 export { DEFAULT_SORT, EMPTY_FILTERS } from './filters';
-export type { SortDirection, SortField, TransactionFilters, TransactionSort } from './filters';
+export type {
+  FilterPatch,
+  SortDirection,
+  SortField,
+  TransactionFilters,
+  TransactionSort,
+} from './filters';

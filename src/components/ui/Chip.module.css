@@ -1,0 +1,62 @@
+/**
+ * Ficha de filtro (MD3 "filter chip" / "input chip").
+ *
+ * La altura es 36px y no los 48px del resto de controles: las fichas van en
+ * grupos de diez o más y con 48 cada grupo ocuparía media pantalla. A cambio
+ * son anchas (el texto entero es el objetivo), así que el área táctil real
+ * sigue siendo cómoda.
+ */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-outline);
+  border-radius: var(--shape-full);
+  background: transparent;
+  color: var(--color-on-surface-variant);
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  transition:
+    background-color var(--motion-duration-short) var(--motion-easing-standard),
+    border-color var(--motion-duration-short) var(--motion-easing-standard),
+    color var(--motion-duration-short) var(--motion-easing-standard);
+}
+
+.chip:active {
+  background: var(--color-surface-container-high);
+}
+
+.chipSelected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+}
+
+/* Ficha de criterio activo: se lee como algo ya aplicado, no como una opción
+   por elegir, así que va rellena y sin borde. */
+.chipRemovable {
+  border-color: transparent;
+  background: var(--color-surface-container-high);
+  color: var(--color-on-surface);
+}
+
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Una categoría con nombre largo no debe estirar la fila hasta desbordarla. */
+  max-width: 14ch;
+}
+
+.leading,
+.trailing {
+  flex-shrink: 0;
+}
+
+.trailing {
+  opacity: 0.7;
+  margin-right: calc(var(--space-1) * -1);
+}

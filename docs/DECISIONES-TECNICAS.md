@@ -339,11 +339,81 @@ Se parecen tanto —las dos son un campo de importe que mueve el saldo— que co
 
 ---
 
+## ADR-023 — La búsqueda ignora tildes y combina las palabras con Y
+
+**Decisión.** El texto se normaliza (minúsculas + `NFD` sin marcas combinantes) antes de comparar, y la consulta se trocea en palabras que deben aparecer **todas**.
+
+**Por qué sin tildes.** La app es en español y se usa en un móvil. Escribir "café", "cumpleaños" o "Bogotá" con su tilde exige cambiar de teclado o mantener pulsada una tecla: nadie lo hace mientras busca. Con comparación literal, buscar `cafe` no encontraría "Café" y la lectura obvia es que el movimiento se perdió. El dato guardado no se toca nunca: la normalización sólo ocurre al comparar.
+
+**Efecto colateral aceptado:** la `ñ` también se descompone, así que "año" y "ano" se vuelven el mismo término *al buscar*. Es una búsqueda más indulgente —"nino" encuentra "niño"—, que es lo que se quiere de un cuadro de búsqueda.
+
+**Por qué Y entre palabras.** Con O, teclear una segunda palabra **ampliaría** los resultados en vez de acotarlos: lo contrario de lo que espera quien sigue escribiendo para afinar. Con Y, además, el orden da igual: `taxi aeropuerto` y `aeropuerto taxi` encuentran "Taxi al aeropuerto" pese al "al" que nadie escribió.
+
+**Dónde busca:** descripción, observaciones y los **nombres** de categoría, subcategoría y cuenta. Buscar sólo en la descripción sería inútil aquí — la mayoría de movimientos se anotan sin ella, así que lo único que los identifica es su categoría. Verificado: `salud` encuentra "Farmacia"; `efectivo` encuentra los 3 movimientos de esa cuenta.
+
+**Dónde NO busca: el importe.** Es tentador y es un error. Los importes son cadenas de dígitos largas y cualquier consulta corta coincidiría con casi todo: escribir `5` devolvería los de 5.000, 50.000, 15.000, 250.000… la lista entera, justo cuando el usuario cree estar acotando. Para eso está el filtro de rango, que sí dice lo que hace.
+
+---
+
+## ADR-024 — Los criterios viven en el store; el texto se retrasa al consumirlo, no al escribirlo
+
+**Decisión.** `filters` y `search` viven en `uiSlice`. El cuadro de búsqueda escribe en el store **en cada tecla**; lo que se retrasa 200 ms (`useDebouncedValue`) es el valor que alimenta el filtrado.
+
+**Por qué en el store y no en `useState`.** La barra, la hoja y las fichas de criterio activo leen y escriben los mismos filtros. Con estado local habría que bajarlo por props a través de los tres, y cada uno tendría su propia oportunidad de desincronizarse. Con una sola fuente, quitar una ficha y desmarcar su casilla en la hoja son literalmente la misma escritura.
+
+**Y no se persiste.** `uiSlice` está fuera de lo que se guarda. Reabrir la app con un filtro de la sesión anterior enseñaría una lista recortada sin que nada explique por qué.
+
+**Dónde va el retraso.** Retrasar lo que se *escribe* daría el peor resultado posible: las letras aparecerían 200 ms después de teclearlas y el campo se percibiría roto. Se retrasa lo que se *consume*. Por eso `uiSlice.search` (lo que se ve) y `filters.search` (lo que se aplica) son campos distintos, y no una duplicación.
+
+**Por qué 200 ms.** Escribiendo rápido en un móvil salen ~5 pulsaciones por segundo, así que 200 ms agrupa casi todas las ráfagas sin llegar a sentirse como espera (por debajo de ~250 ms la respuesta se percibe inmediata).
+
+**Se filtra en dos pasos** —criterios primero, texto después sobre el resultado— porque los criterios cambian con un toque y el texto con cada tecla: teclear sólo repite la búsqueda sobre la lista ya recortada.
+
+---
+
+## ADR-025 — La hoja de filtros aplica en vivo y no tiene "Aceptar"
+
+**Decisión.** Cada toque modifica los criterios de inmediato y el botón inferior va contando lo que queda ("Ver 12 movimientos"). No hay Aceptar/Cancelar. La hoja **no guarda estado propio**: ni un `useState`.
+
+**Por qué.** El recuento es información que hace falta *mientras* se elige, no después. Con un botón "Aplicar" hay que cerrar, mirar, volver a abrir y corregir por cada criterio de más. Verificado en vivo: marcar Gastos → Cuenta principal → Comida → Mes llevó el botón de 16 → 13 → 5 → 2 → 1 movimiento.
+
+**El precio es que no hay "Cancelar".** Se compensa con "Limpiar todo" siempre a mano, con que cada ficha se desmarca sola, y con que nada de lo que se hace aquí toca un solo dato guardado.
+
+**Sin copia local de los filtros** porque habría dos versiones de la verdad, y bastaría abrir la hoja con filtros ya puestos para verlas discrepar.
+
+**Las subcategorías sólo aparecen si hay una categoría marcada**, y al desmarcar la categoría padre **se limpian las suyas del filtro**. Sin esa limpieza, un filtro de subcategoría seguiría descartando movimientos desde una sección que ya no se ve: un filtro invisible que no devuelve nada es el fallo que más se parece a "la app perdió mis datos". Verificado: desmarcar «Comida» con «Mercado» activa devolvió la lista a 16 y dejó la sección vacía, en vez de quedarse en 1 sin explicación.
+
+---
+
+## ADR-026 — Dos señales impiden que un filtro se vuelva invisible: la insignia y las fichas
+
+**Decisión.** El botón de filtros lleva una insignia con el número de **ejes** activos, y bajo la barra hay una ficha **por valor**, cada una con su X.
+
+**El fallo que evitan.** Los filtros viven dentro de una hoja: una vez cerrada, nada en pantalla dice que la lista está recortada. El usuario ve menos movimientos de los que tiene, concluye que se borraron, y no tiene forma de averiguar por qué. La insignia dice *cuántos* criterios hay; las fichas dicen *cuáles*. Y una ficha por valor —no por eje— permite quitar una sola categoría sin volver a abrir la hoja.
+
+**La insignia cuenta ejes, no claves.** Detectado al verificar en el navegador: contando claves, elegir el atajo "Mes" ponía un **2** en la insignia (pone `dateFrom` y `dateTo`) mientras abajo aparecía **una** sola ficha con el rango. Dos números distintos describiendo lo mismo, en la misma pantalla, y ninguno claramente equivocado a ojos de quien mira: la clase de detalle que hace desconfiar de toda la app. `FILTER_AXES` agrupa `dateFrom`/`dateTo`/`month`/`year` como "cuándo" y `amountMin`/`amountMax` como "cuánto". Hay un test que fija el invariante *insignia ≤ fichas*.
+
+**El denominador de la pista también se corrigió.** "1 de 17" aparecía mientras la lista sin buscar decía "16 movimientos" — el 17 incluía un ajuste de saldo que el usuario no puede ver en ninguna circunstancia. Ahora el denominador es *lo que había antes de escribir*: "2 de 5" dentro de los filtros puestos.
+
+**Quitar el último valor de una lista borra el criterio** en vez de dejar `[]`. Una lista vacía no filtra nada (los predicados tratan lo ausente como "sin restricción"), así que el criterio seguiría contando en la insignia sin tener ningún efecto: el botón diría "1 filtro" con cero filtros aplicados.
+
+---
+
+## ADR-027 — La regla de los ajustes se mudó de la pantalla al servicio
+
+**Decisión.** `applyFilters` decide por sí solo que filtrar **por** la categoría "Ajuste de saldo" implica mostrarlos (`resolveIncludeAdjustments`). Un `includeAdjustments` explícito sigue ganando.
+
+**Por qué se movió.** En la Fase 8 esa regla estaba escrita dentro de `TransactionsScreen`, así que sólo valía allí: cualquier otra vista que filtrara por esa categoría habría mostrado una lista vacía, y los ajustes habrían quedado registrados e invisibles — imposibles de revisar y, sobre todo, de **borrar**, que es lo que los hace reversibles y lo que promete el aviso al crearlos.
+
+**Verificado en la build de producción:** un ajuste de +$50.000 aparece al filtrar por su categoría y el resumen de la lista sigue diciendo `$0 · $0` — visible pero fuera de ingresos y gastos, que es el invariante que impide que vuelva la queja original.
+
+---
+
 ## Decisiones pendientes (se resolverán en su fase)
 
 | Tema | Fase | Nota |
 |---|---|---|
-| Umbral de virtualización de listas largas | 14 | Se anota el umbral (~500 ítems); no se implementa hasta que haga falta |
+| Virtualización de listas largas | 15+ | Umbral anotado (~500 ítems). No se implementa: con el filtrado en dos pasos, la lista pintada rara vez llega ahí, y virtualizar rompe Ctrl+F del navegador |
 | Formato exacto del CSV de reportes | 17 | Locale es-CO: separador `;` y coma decimal, para que Excel lo abra bien |
 | PIN / biometría / cifrado en reposo | 19 | Solo se deja la costura arquitectónica (interfaz + implementación no-op). **No se implementa nada** en esta reescritura |
 | Migración de `localStorage` a IndexedDB | — | Diferida. El `StorageAdapter` ya deja la puerta abierta |

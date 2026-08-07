@@ -1,5 +1,5 @@
 import { DEFAULT_PERIOD, type Period } from '@/constants';
-import { EMPTY_FILTERS, type TransactionFilters } from '@/models';
+import { EMPTY_FILTERS, type FilterPatch, type TransactionFilters } from '@/models';
 import { createId } from '@/services/id/createId';
 import type { SliceCreator } from '../types';
 
@@ -39,6 +39,16 @@ export interface UiSlice {
 
   period: Period;
   filters: TransactionFilters;
+  /**
+   * Texto TAL COMO SE ESTÁ ESCRIBIENDO. No es lo mismo que `filters.search`.
+   *
+   * Esta cadena cambia con cada tecla y la pinta el cuadro de búsqueda al
+   * instante; `filters.search` es el criterio ya comprometido, que la pantalla
+   * compone con el valor retrasado (`useDebouncedValue`) para no recorrer
+   * todos los movimientos en cada pulsación. Son dos cosas distintas —lo que
+   * se ve y lo que se aplica— y por eso viven separadas: fundirlas obligaría a
+   * elegir entre un campo que va a tirones o un filtrado en cada tecla.
+   */
   search: string;
   toasts: Toast[];
 
@@ -49,7 +59,8 @@ export interface UiSlice {
 
   setPeriod(period: Period): void;
   setFilters(filters: TransactionFilters): void;
-  patchFilters(patch: Partial<TransactionFilters>): void;
+  /** Añade, cambia o QUITA criterios. Poner una clave a `undefined` la borra. */
+  patchFilters(patch: FilterPatch): void;
   clearFilters(): void;
   setSearch(search: string): void;
 
@@ -91,8 +102,23 @@ export const createUiSlice: SliceCreator<UiSlice> = (set) => ({
     set({ filters });
   },
 
+  /**
+   * Fusiona el parche y ELIMINA las claves puestas a `undefined`.
+   *
+   * El borrado no es cosmético. Con `{ ...filters, ...patch }` a secas, quitar
+   * el filtro de cuenta dejaría dentro `accountIds: undefined`: no filtraría
+   * nada —los predicados tratan lo ausente como "sin restricción"— pero
+   * `Object.entries` seguiría viendo la clave, así que la insignia del botón
+   * contaría un filtro que ya no existe y el usuario buscaría en vano cuál es.
+   */
   patchFilters(patch) {
-    set((state) => ({ filters: { ...state.filters, ...patch } }));
+    set((state) => {
+      const next: Record<string, unknown> = { ...state.filters, ...patch };
+      for (const [key, value] of Object.entries(patch)) {
+        if (value === undefined) delete next[key];
+      }
+      return { filters: next as TransactionFilters };
+    });
   },
 
   clearFilters() {

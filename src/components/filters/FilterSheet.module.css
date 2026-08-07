@@ -1,0 +1,38 @@
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-bottom: var(--space-2);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sectionTitle {
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+/**
+ * Aquí las fichas SÍ envuelven en varias líneas, al revés que en la fila de
+ * criterios activos: dentro de la hoja hay que poder ver todas las categorías
+ * de un vistazo para elegir. Una fila que se desplaza escondería la mitad de
+ * las opciones detrás de un gesto que nadie descubre.
+ */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
