@@ -8,6 +8,7 @@ import {
   startOfWeek,
   startOfYear,
   subDays,
+  subMonths,
 } from 'date-fns';
 import { WEEK_STARTS_ON, type Period } from '@/constants';
 import type { ISODate } from '@/models';
@@ -75,6 +76,26 @@ export function getPeriodRange(period: Period, reference: ISODate = todayISO()):
 export function getRollingRange(days: number, reference: ISODate = todayISO()): DateRange {
   const end = parseISODate(reference);
   return { from: toISO(subDays(end, Math.max(0, days - 1))), to: toISO(end) };
+}
+
+/**
+ * Los últimos `count` meses terminando en el de `reference`, como `'yyyy-MM'`.
+ *
+ * Devuelve CLAVES DE MES y no rangos: la serie mensual del Inicio agrupa
+ * comparando el prefijo de la fecha (`'2026-08-14'.startsWith('2026-08')`), que
+ * es una comparación de cadenas en lugar de dos de fechas por movimiento.
+ *
+ * Como `eachDayInRange`, incluye los meses SIN movimientos: un mes que
+ * desaparece de la serie comprime el eje y hace que medio año parezca un
+ * trimestre.
+ */
+export function lastMonths(count: number, reference: ISODate = todayISO()): string[] {
+  const end = startOfMonth(parseISODate(reference));
+  const months: string[] = [];
+  for (let i = count - 1; i >= 0; i--) {
+    months.push(format(subMonths(end, i), 'yyyy-MM'));
+  }
+  return months;
 }
 
 /**

@@ -18,6 +18,7 @@ export {
   DEFAULT_PERIOD,
   PERIOD_COMPARISON_LABELS,
   PERIOD_LABELS,
+  PERIOD_PHRASES,
   PERIODS,
 } from './periods';
 export type { Period } from './periods';

@@ -409,6 +409,50 @@ Se parecen tanto —las dos son un campo de importe que mueve el saldo— que co
 
 ---
 
+## ADR-028 — Las cinco tarjetas indicadoras son FLUJO; ningún saldo entra en la rejilla
+
+**Decisión.** El Inicio muestra el saldo total arriba, solo y rotulado como lo que es, y debajo cinco indicadores que responden todos a "qué pasó durante el periodo": gasto medio al día, categoría principal, mayor gasto, tasa de ahorro y número de movimientos.
+
+**Por qué la regla es "ninguno es un saldo".** Meter un stock en esa rejilla reproduciría el error de v1 en pequeño: una cifra que baja con cada gasto bajo un rótulo que no habla de gastos. La separación se nota al usar la app — **las cinco cifras cambian al tocar una pestaña y el saldo total no**. Verificado: Hoy/Semana/Mes dan tres juegos distintos de indicadores con el mismo `$3.180.000` arriba.
+
+**El promedio diario se divide entre los días TRANSCURRIDOS, no entre los del periodo.** Lo evidente —`gasto / 31`— hace inútil el dato justo cuando se mira, que es a mitad de mes: el 2 de agosto con 186.000 gastados diría "6.000 al día". El número no estaría mal calculado, estaría respondiendo a "cuánto habrás gastado al día si no gastas nada más en todo el mes", que nadie preguntó. Es el mismo criterio de truncado que usará la comparación entre periodos de la Fase 16.
+
+**`null` no es cero.** Un promedio sin días transcurridos y una tasa de ahorro sin ingresos no valen 0: no se pueden calcular. Se pintan «—», atenuado. Escribir "0%" ahí afirmaría algo falso —"no ahorraste nada"— cuando lo cierto es que no entró dinero que ahorrar. Nunca `Infinity` ni `NaN`.
+
+**La tasa de ahorro puede ser negativa y no se recorta.** "−88%" dice algo que "0%" oculta.
+
+---
+
+## ADR-029 — Qué gráfica para qué pregunta (y por qué una de ellas no es una tarta)
+
+**Decisión.** Cinco gráficas en orden de lo concreto a lo general: dona de gasto por categoría, barras de gasto diario, comparada de ingresos vs. gastos por mes, evolución del saldo, y reparto del saldo entre cuentas. Las dos últimas son STOCK y van al final, después de las de flujo.
+
+**Ingresos y gastos van UNA AL LADO DE OTRA, nunca apiladas.** Apilarlas volvería a sugerir que una se resta de la otra dentro de la misma barra, que es exactamente la confusión de v1. Dos barras separadas dicen lo único cierto: son dos flujos independientes.
+
+**El reparto por cuenta no es una tarta, y no usa Recharts.** Dos razones, ninguna estética:
+1. *Una tarta no puede representar deudas.* Con +3.400.000 en ahorros y −420.000 en la tarjeta, la porción de la tarjeta sería negativa: las porciones sumarían más del 100% y el dibujo sería sencillamente falso. `accountDistribution` calcula el porcentaje **sólo sobre los saldos positivos** y marca las deudas con `isDebt`, que se pintan en rojo y con su importe, sin fingir ser una fracción de un dinero que no existe.
+2. *Ya hay una dona en esa pantalla.* Dos donas seguidas se confunden de un vistazo, y la segunda respondería a una pregunta distinta —stock, no flujo— con la misma forma.
+
+Al ser barras proporcionales sale más barato y más accesible en HTML+CSS que en SVG: cada fila es texto real, y no añade un byte a la librería de gráficos.
+
+**El eje Y de la evolución del saldo no empieza en cero.** Con saldos de siete cifras y variaciones del 3%, un eje anclado en 0 dibuja una línea plana que no informa de nada. Se compensa mostrando los valores de los extremos y una línea de cero cuando el saldo llega a ser negativo.
+
+**`buildBalanceTimeline` se calcula en una pasada, no en una por día.** Lo evidente —para cada día, sumar todo lo anterior— son 30 recorridos completos del historial en cada render de la pantalla de arranque. Aquí una sola pasada reparte cada movimiento en tres cajas (antes de la ventana, dentro, después) y un recorrido por días acumula: O(movimientos + días). El saldo de apertura no es opcional: sin él la línea arrancaría en 0 y subiría hasta el saldo real, dibujando una ganancia que nunca existió.
+
+---
+
+## ADR-030 — Tres correcciones de coherencia detectadas en la Fase 15
+
+**`accountDistribution` vive en `services/balance`, no en `services/metrics`.** El plan lo situaba en metrics; es un error del plan. La función lee saldos, y `services/metrics` tiene prohibido por regla de ESLint importar `services/balance` (ADR-003). Colocarlo allí habría obligado a pasarle los saldos ya calculados desde fuera —esquivando la regla sin quebrantarla— y a dejar una función de "métricas" cuyo dato de entrada es justo el que ese directorio no debe manejar.
+
+**El Inicio ya no repite la suma del saldo total.** `useTotalBalance()` existía desde la Fase 5 y la pantalla lo reimplementaba a mano en un `useMemo`. Dos sitios calculando el mismo número es la forma exacta que tenía el descuadre de v1 de colarse, y desde esta fase importa más: la línea de "Evolución del saldo" termina en esa misma cifra, así que dos cálculos independientes podrían discrepar en la misma pantalla.
+
+**`PERIOD_PHRASES` no es `PERIOD_LABELS` en minúsculas.** Las pestañas se rotulan "Hoy / Semana / Mes / Año" porque tienen que caber en cuatro botones; esos mismos rótulos metidos en una frase daban **"Sin gastos en semana"** e **"INDICADORES DE MES"**. Una app en la que se lee eso parece traducida a máquina, y el usuario deja de confiar en lo que dice justo al lado de sus cifras. Se detectó al cambiar de pestaña durante la verificación, no al escribir el código, porque con la pestaña por defecto ("Hoy") la frase salía bien.
+
+**Bonus del mismo repaso:** el eje de la evolución del saldo rotulaba "6 Aug" junto a "9 jul" — `date-fns` sin `locale: es` escribe en inglés, y sólo se nota en los meses cuyo nombre difiere. Es decir: casi nunca al desarrollar, y siempre en producción.
+
+---
+
 ## Decisiones pendientes (se resolverán en su fase)
 
 | Tema | Fase | Nota |

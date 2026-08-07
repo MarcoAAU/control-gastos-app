@@ -15,6 +15,27 @@ export const PERIOD_LABELS: Record<Period, string> = {
   year: 'Año',
 };
 
+/**
+ * El periodo dicho DENTRO de una frase.
+ *
+ * ⚠️ NO ES `PERIOD_LABELS` EN MINÚSCULAS, y confundirlos produce castellano
+ * roto. Las pestañas se rotulan "Hoy / Semana / Mes / Año" porque tienen que
+ * caber en cuatro botones, pero esos mismos rótulos metidos en una frase dan
+ * "Sin gastos en semana" o "Indicadores de mes". Una app en la que se lee eso
+ * parece traducida a máquina, y el usuario deja de confiar en lo que dice
+ * exactamente donde más necesita confiar: al lado de sus cifras.
+ *
+ * Van sin preposición delante a propósito: "esta semana" ya la lleva
+ * implícita, y "en esta semana" sobra. Quien las use escribe
+ * `Sin gastos ${frase}`, nunca `Sin gastos en ${frase}`.
+ */
+export const PERIOD_PHRASES: Record<Period, string> = {
+  day: 'hoy',
+  week: 'esta semana',
+  month: 'este mes',
+  year: 'este año',
+};
+
 /** Rótulo de la comparación con el periodo anterior. */
 export const PERIOD_COMPARISON_LABELS: Record<Period, string> = {
   day: 'vs. ayer',

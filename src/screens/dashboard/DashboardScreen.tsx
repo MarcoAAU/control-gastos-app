@@ -1,20 +1,40 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { DASHBOARD_PERIODS, DEFAULT_PERIOD, PERIOD_LABELS, ROUTES, type Period } from '@/constants';
+import {
+  DASHBOARD_PERIODS,
+  DEFAULT_PERIOD,
+  PERIOD_PHRASES,
+  ROUTES,
+  type Period,
+} from '@/constants';
 import { Card, Icon, IconButton, Skeleton } from '@/components/ui';
 import { Fab, ScreenContainer, TopBar } from '@/components/layout';
 import { PeriodTabs } from '@/components/common/PeriodTabs';
+import { accountDistribution } from '@/services/balance/accountDistribution';
+import { buildBalanceTimeline } from '@/services/balance/buildBalanceTimeline';
+import { averageDailySpend } from '@/services/metrics/averageDailySpend';
 import { categoryBreakdown, dailySeries } from '@/services/metrics/categoryBreakdown';
+import { largestExpense } from '@/services/metrics/largestExpense';
+import { monthlySeries } from '@/services/metrics/monthlySeries';
 import { periodTotals } from '@/services/metrics/periodTotals';
+import { savingsRate } from '@/services/metrics/savingsRate';
+import { topCategory } from '@/services/metrics/topCategory';
 import {
   eachDayInRange,
   getPeriodRange,
   getRollingRange,
+  lastMonths,
 } from '@/services/periods/getPeriodRange';
-import { useAccountBalances, useAccountLookup, useAccounts } from '@/store/hooks/useAccounts';
+import {
+  useAccountBalances,
+  useAccountLookup,
+  useAccounts,
+  useTotalBalance,
+} from '@/store/hooks/useAccounts';
 import { useCategories, useTransactions } from '@/store/hooks/useTransactions';
 import { AccountsRow } from './sections/AccountsRow';
 import { FinancialSummary } from './sections/FinancialSummary';
+import { IndicatorGrid } from './sections/IndicatorGrid';
 import { RecentTransactions } from './sections/RecentTransactions';
 import styles from './DashboardScreen.module.css';
 
@@ -30,6 +50,18 @@ const RECENT_LIMIT = 6;
 
 /** Días de la gráfica de tendencia. El mismo que v1. */
 const TREND_DAYS = 14;
+
+/**
+ * Ventanas de las gráficas nuevas (Fase 15). Son constantes y no ajustes del
+ * usuario a propósito: una app de gastos personales no necesita un selector de
+ * ventana en el Inicio, necesita que el Inicio se lea de un vistazo.
+ *
+ * · 6 meses en la comparada — un año no cabe legible en 350 px de ancho.
+ * · 30 días en la evolución del saldo — es el ciclo real de quien cobra
+ *   mensualmente; con 365 días la variación del mes en curso desaparecería.
+ */
+const MONTHLY_COUNT = 6;
+const BALANCE_DAYS = 30;
 
 /**
  * Inicio. Paridad con v1 más la corrección de fondo del rótulo "Ingresos"
@@ -57,14 +89,17 @@ export default function DashboardScreen() {
 
   const range = useMemo(() => getPeriodRange(period), [period]);
 
-  // STOCK. Se rotula "Saldo total" y nunca "Ingresos" (ADR-003).
-  const totalBalance = useMemo(() => {
-    let sum = 0;
-    for (const account of accounts) {
-      if (account.includeInTotals) sum += balances.get(account.id) ?? 0;
-    }
-    return sum;
-  }, [accounts, balances]);
+  /**
+   * STOCK. Se rotula "Saldo total" y nunca "Ingresos" (ADR-003).
+   *
+   * Sale del hook, que a su vez llama a `computeTotalBalance`. Antes esta
+   * pantalla repetía la suma a mano aunque el hook ya existía — dos sitios
+   * calculando el mismo número, que es exactamente la forma que tenía el
+   * descuadre de v1 de colarse. Importa más desde la Fase 15: la línea de
+   * "Evolución del saldo" termina en esta misma cifra, y si cada una la
+   * calculara por su cuenta podrían acabar discrepando en la misma pantalla.
+   */
+  const totalBalance = useTotalBalance();
 
   // FLUJO del periodo. Los ajustes quedan excluidos dentro de `periodTotals`.
   const totals = useMemo(() => periodTotals(transactions, range), [transactions, range]);
@@ -84,6 +119,33 @@ export default function DashboardScreen() {
     return dailySeries(transactions, days);
   }, [transactions]);
 
+  // ── Indicadores del periodo (Fase 15). Los cinco son FLUJO. ──────────────
+  const averageDaily = useMemo(() => averageDailySpend(totals.expense, range), [totals.expense, range]);
+  const mainCategory = useMemo(() => topCategory(slices), [slices]);
+  const biggestExpense = useMemo(() => largestExpense(inPeriod), [inPeriod]);
+  const savings = useMemo(() => savingsRate(totals), [totals]);
+
+  // ── Series de las gráficas nuevas ───────────────────────────────────────
+  // La comparada y la de saldo NO dependen del periodo elegido: responden a
+  // "cómo va la cosa en general", y reiniciarlas al tocar una pestaña haría
+  // que dos gráficas contiguas hablaran de ventanas distintas sin avisar.
+  const monthly = useMemo(
+    () => monthlySeries(transactions, lastMonths(MONTHLY_COUNT)),
+    [transactions],
+  );
+
+  // STOCK: el saldo día a día. Va en `services/balance`, no en metrics.
+  const balanceSeries = useMemo(
+    () => buildBalanceTimeline(accounts, transactions, eachDayInRange(getRollingRange(BALANCE_DAYS))),
+    [accounts, transactions],
+  );
+
+  // STOCK: reparto del saldo actual entre cuentas.
+  const distribution = useMemo(
+    () => accountDistribution(accounts, balances),
+    [accounts, balances],
+  );
+
   // `useTransactions` ya los devuelve del más reciente al más antiguo, así que
   // aquí sólo hay que filtrar y cortar. Los ajustes no son "movimientos" para
   // el usuario: mostrarlos aquí llenaría el Inicio de contabilidad interna.
@@ -92,7 +154,9 @@ export default function DashboardScreen() {
     [inPeriod],
   );
 
-  const periodLabel = PERIOD_LABELS[period];
+  // Para la prosa se usa la FRASE y no el rótulo de la pestaña: 'Sin gastos en
+  // semana' es castellano roto. Ver PERIOD_PHRASES.
+  const periodPhrase = PERIOD_PHRASES[period];
   const isEmpty = accounts.length === 0 && transactions.length === 0;
 
   return (
@@ -131,20 +195,34 @@ export default function DashboardScreen() {
             <FinancialSummary
               totalBalance={totalBalance}
               totals={totals}
-              periodLabel={periodLabel}
+              periodPhrase={periodPhrase}
+            />
+
+            <IndicatorGrid
+              totals={totals}
+              averageDaily={averageDaily}
+              topCategory={mainCategory}
+              largestExpense={biggestExpense}
+              savingsRate={savings}
+              periodPhrase={periodPhrase}
             />
 
             <AccountsRow accounts={accounts} balances={balances} />
 
             {/* El hueco se reserva con la misma altura que ocuparán las
                 gráficas: así al llegar el chunk nada salta de sitio. */}
-            <Suspense fallback={<Skeleton variant="rect" height={280} count={2} />}>
+            <Suspense fallback={<Skeleton variant="rect" height={280} count={3} />}>
               <ChartsSection
                 slices={slices}
                 trend={trend}
                 trendDays={TREND_DAYS}
                 expenseTotal={totals.expense}
-                periodLabel={periodLabel}
+                periodPhrase={periodPhrase}
+                monthly={monthly}
+                monthlyCount={MONTHLY_COUNT}
+                balanceSeries={balanceSeries}
+                balanceDays={BALANCE_DAYS}
+                distribution={distribution}
               />
             </Suspense>
 
@@ -152,7 +230,7 @@ export default function DashboardScreen() {
               transactions={recent}
               categoryById={categoryById}
               accountById={accountById}
-              periodLabel={periodLabel}
+              periodPhrase={periodPhrase}
             />
 
             <Link to={ROUTES.history} className={styles.historyLink}>

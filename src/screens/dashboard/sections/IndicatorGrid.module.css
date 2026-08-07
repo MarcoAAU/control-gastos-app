@@ -1,0 +1,78 @@
+.section {
+  margin-bottom: var(--space-4);
+}
+
+.heading {
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+  margin-bottom: var(--space-2);
+  padding-left: var(--space-1);
+}
+
+/**
+ * Dos columnas, y la quinta tarjeta ocupa la fila entera.
+ *
+ * Con cinco tarjetas y dos columnas, la última quedaría sola a la izquierda
+ * dejando un hueco que parece un fallo de maquetación. Estirándola se lee como
+ * un cierre deliberado de la sección.
+ */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.grid > :last-child {
+  grid-column: 1 / -1;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-label);
+  color: var(--color-on-surface-variant);
+}
+
+.value {
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-on-surface);
+  /* Un nombre de categoría largo no debe empujar la tarjeta vecina. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* «—» no es una cifra: se atenúa para que no se lea como un dato. */
+.valueEmpty {
+  color: var(--color-on-surface-variant);
+  opacity: 0.6;
+}
+
+.income {
+  color: var(--color-success);
+}
+
+.expense {
+  color: var(--color-error);
+}
+
+.hint {
+  font-size: var(--font-size-label);
+  color: var(--color-on-surface-variant);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

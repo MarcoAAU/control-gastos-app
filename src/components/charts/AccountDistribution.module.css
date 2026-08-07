@@ -1,0 +1,78 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-body-sm);
+}
+
+.icon {
+  flex-shrink: 0;
+  color: var(--color-on-surface-variant);
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-on-surface);
+}
+
+.amount {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-on-surface);
+}
+
+.debt {
+  color: var(--color-error);
+}
+
+.track {
+  height: 8px;
+  border-radius: var(--shape-full);
+  background: var(--color-surface-container-high);
+  overflow: hidden;
+}
+
+.bar {
+  height: 100%;
+  border-radius: var(--shape-full);
+  /* Una cuenta con saldo diminuto seguiría teniendo una barra visible: sin
+     esto, "$2.000" se dibujaría con 0px y parecería un fallo de pintado. */
+  min-width: 3px;
+  transition: width var(--motion-duration-medium) var(--motion-easing-standard);
+}
+
+.barDebt {
+  background: var(--color-error);
+}
+
+.share {
+  font-size: var(--font-size-label);
+  color: var(--color-on-surface-variant);
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-outline-variant);
+  font-size: var(--font-size-body-sm);
+  color: var(--color-on-surface-variant);
+}

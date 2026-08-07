@@ -9,7 +9,8 @@ export interface RecentTransactionsProps {
   transactions: readonly Transaction[];
   categoryById: Map<ID, Category>;
   accountById: Map<ID, Account>;
-  periodLabel: string;
+  /** El periodo dicho dentro de una frase: "hoy", "esta semana". */
+  periodPhrase: string;
 }
 
 /**
@@ -25,7 +26,7 @@ export function RecentTransactions({
   transactions,
   categoryById,
   accountById,
-  periodLabel,
+  periodPhrase,
 }: RecentTransactionsProps) {
   return (
     <section className={styles.section} aria-label="Movimientos recientes">
@@ -41,7 +42,7 @@ export function RecentTransactions({
         <Card padding="none">
           <EmptyState
             icon="nav-transactions"
-            title={`Sin movimientos en ${periodLabel.toLowerCase()}`}
+            title={`Sin movimientos ${periodPhrase}`}
             description="Registra un ingreso o un gasto con el botón + de la pantalla Movimientos."
           />
         </Card>

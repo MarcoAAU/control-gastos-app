@@ -10,7 +10,8 @@ export interface FinancialSummaryProps {
   totalBalance: number;
   /** FLUJO: ingresos y gastos del periodo seleccionado. */
   totals: FlowTotals;
-  periodLabel: string;
+  /** El periodo dicho dentro de una frase: "hoy", "esta semana". */
+  periodPhrase: string;
 }
 
 /**
@@ -39,7 +40,7 @@ export interface FinancialSummaryProps {
  * checklist de regresión), y por eso el rótulo del saldo lleva debajo de dónde
  * sale el número.
  */
-export function FinancialSummary({ totalBalance, totals, periodLabel }: FinancialSummaryProps) {
+export function FinancialSummary({ totalBalance, totals, periodPhrase }: FinancialSummaryProps) {
   return (
     <>
       <Card className={styles.totalCard}>
@@ -59,7 +60,7 @@ export function FinancialSummary({ totalBalance, totals, periodLabel }: Financia
       </div>
 
       <p className={styles.caption}>
-        Ingresos, gastos y balance de <strong>{periodLabel.toLowerCase()}</strong>. Los ajustes de
+        Ingresos, gastos y balance de <strong>{periodPhrase}</strong>. Los ajustes de
         saldo no se cuentan aquí.
       </p>
     </>
