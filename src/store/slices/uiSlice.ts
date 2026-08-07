@@ -1,5 +1,6 @@
 import { DEFAULT_PERIOD, type Period } from '@/constants';
 import { EMPTY_FILTERS, type FilterPatch, type TransactionFilters } from '@/models';
+import { applyFilterPatch } from '@/services/filters/applyFilterPatch';
 import { createId } from '@/services/id/createId';
 import type { SliceCreator } from '../types';
 
@@ -16,6 +17,15 @@ import type { SliceCreator } from '../types';
  */
 
 export type AppStatus = 'hydrating' | 'ready' | 'error';
+
+/**
+ * Pantallas que filtran, cada una con sus criterios.
+ *
+ * Es un tipo cerrado a propósito: añadir un ámbito obliga a decidir dónde vive
+ * y a inicializarlo, en vez de que aparezca un `undefined` la primera vez que
+ * alguien escriba una cadena nueva.
+ */
+export type FilterScope = 'transactions' | 'reports';
 
 export type ToastKind = 'info' | 'success' | 'error';
 
@@ -38,18 +48,34 @@ export interface UiSlice {
   persistenceError: string | null;
 
   period: Period;
-  filters: TransactionFilters;
+
   /**
-   * Texto TAL COMO SE ESTÁ ESCRIBIENDO. No es lo mismo que `filters.search`.
+   * Criterios de filtrado, SEPARADOS POR PANTALLA.
    *
-   * Esta cadena cambia con cada tecla y la pinta el cuadro de búsqueda al
-   * instante; `filters.search` es el criterio ya comprometido, que la pantalla
-   * compone con el valor retrasado (`useDebouncedValue`) para no recorrer
-   * todos los movimientos en cada pulsación. Son dos cosas distintas —lo que
-   * se ve y lo que se aplica— y por eso viven separadas: fundirlas obligaría a
-   * elegir entre un campo que va a tirones o un filtrado en cada tecla.
+   * ⚠️ NO ES UN JUEGO DE FILTROS COMPARTIDO, y la diferencia es de
+   * comportamiento, no de organización. Acotar un informe para exportarlo no
+   * debe recortar en silencio la lista de Movimientos, ni al revés: un filtro
+   * que aparece en una pantalla donde nadie lo puso es indistinguible de datos
+   * perdidos.
+   *
+   * Tampoco valía dejar los de Reportes en `useState` local: se perdían al
+   * tocar cualquier pestaña de la barra inferior, y montar un informe con
+   * cuatro criterios cuesta bastante más que anotar un gasto. Con el ámbito
+   * dentro del store, cada pantalla conserva lo suyo mientras dure la sesión.
    */
-  search: string;
+  filters: Record<FilterScope, TransactionFilters>;
+
+  /**
+   * Texto TAL COMO SE ESTÁ ESCRIBIENDO, también por pantalla.
+   *
+   * No es lo mismo que `filters[scope].search`. Esta cadena cambia con cada
+   * tecla y la pinta el cuadro de búsqueda al instante; el criterio que se
+   * aplica es el valor retrasado (`useDebouncedValue`), para no recorrer todos
+   * los movimientos en cada pulsación. Son dos cosas distintas —lo que se ve y
+   * lo que se aplica— y fundirlas obligaría a elegir entre un campo que va a
+   * tirones o un filtrado en cada tecla.
+   */
+  search: Record<FilterScope, string>;
   toasts: Toast[];
 
   setStatus(status: AppStatus): void;
@@ -58,11 +84,11 @@ export interface UiSlice {
   setPersistenceError(message: string | null): void;
 
   setPeriod(period: Period): void;
-  setFilters(filters: TransactionFilters): void;
+  setFilters(scope: FilterScope, filters: TransactionFilters): void;
   /** Añade, cambia o QUITA criterios. Poner una clave a `undefined` la borra. */
-  patchFilters(patch: FilterPatch): void;
-  clearFilters(): void;
-  setSearch(search: string): void;
+  patchFilters(scope: FilterScope, patch: FilterPatch): void;
+  clearFilters(scope: FilterScope): void;
+  setSearch(scope: FilterScope, search: string): void;
 
   showToast(message: string, kind?: ToastKind): string;
   dismissToast(id: string): void;
@@ -74,8 +100,8 @@ export const createUiSlice: SliceCreator<UiSlice> = (set) => ({
   persistenceError: null,
 
   period: DEFAULT_PERIOD,
-  filters: EMPTY_FILTERS,
-  search: '',
+  filters: { transactions: EMPTY_FILTERS, reports: EMPTY_FILTERS },
+  search: { transactions: '', reports: '' },
   toasts: [],
 
   setStatus(status) {
@@ -98,37 +124,35 @@ export const createUiSlice: SliceCreator<UiSlice> = (set) => ({
     set((state) => (state.period === period ? {} : { period }));
   },
 
-  setFilters(filters) {
-    set({ filters });
+  setFilters(scope, filters) {
+    set((state) => ({ filters: { ...state.filters, [scope]: filters } }));
   },
 
   /**
-   * Fusiona el parche y ELIMINA las claves puestas a `undefined`.
+   * Fusiona el parche y elimina las claves puestas a `undefined`.
    *
-   * El borrado no es cosmético. Con `{ ...filters, ...patch }` a secas, quitar
-   * el filtro de cuenta dejaría dentro `accountIds: undefined`: no filtraría
-   * nada —los predicados tratan lo ausente como "sin restricción"— pero
-   * `Object.entries` seguiría viendo la clave, así que la insignia del botón
-   * contaría un filtro que ya no existe y el usuario buscaría en vano cuál es.
+   * La regla vive en `services/filters/applyFilterPatch` y no aquí: es lógica
+   * pura, se testea sin montar el store, y así las dos pantallas que filtran
+   * comparten literalmente el mismo código en vez de dos copias parecidas.
    */
-  patchFilters(patch) {
-    set((state) => {
-      const next: Record<string, unknown> = { ...state.filters, ...patch };
-      for (const [key, value] of Object.entries(patch)) {
-        if (value === undefined) delete next[key];
-      }
-      return { filters: next as TransactionFilters };
-    });
+  patchFilters(scope, patch) {
+    set((state) => ({
+      filters: { ...state.filters, [scope]: applyFilterPatch(state.filters[scope], patch) },
+    }));
   },
 
-  clearFilters() {
+  clearFilters(scope) {
     set((state) =>
-      Object.keys(state.filters).length === 0 ? {} : { filters: EMPTY_FILTERS },
+      Object.keys(state.filters[scope]).length === 0
+        ? {}
+        : { filters: { ...state.filters, [scope]: EMPTY_FILTERS } },
     );
   },
 
-  setSearch(search) {
-    set((state) => (state.search === search ? {} : { search }));
+  setSearch(scope, search) {
+    set((state) =>
+      state.search[scope] === search ? {} : { search: { ...state.search, [scope]: search } },
+    );
   },
 
   showToast(message, kind = 'info') {

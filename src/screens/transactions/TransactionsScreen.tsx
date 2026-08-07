@@ -14,6 +14,7 @@ import { searchTransactions } from '@/services/filters/searchTransactions';
 import { periodTotals } from '@/services/metrics/periodTotals';
 import { useAppStore } from '@/store';
 import { useAccountLookup, useAccounts } from '@/store/hooks/useAccounts';
+import { useScopedFilters } from '@/store/hooks/useScopedFilters';
 import { useCategories, useTransactions } from '@/store/hooks/useTransactions';
 import { formatDateTime } from '@/utils/date';
 import { formatMoney, formatSignedMoney } from '@/utils/money';
@@ -73,12 +74,12 @@ export default function TransactionsScreen() {
    * app con un filtro puesto de la sesión anterior enseñaría una lista
    * recortada sin que nada explique por qué: la lectura obvia es "perdí mis
    * movimientos".
+   *
+   * El ámbito `'transactions'` los separa de los de Reportes: filtrar aquí no
+   * debe recortar un informe de la otra pestaña, ni al revés.
    */
-  const filters = useAppStore((state) => state.filters);
-  const patchFilters = useAppStore((state) => state.patchFilters);
-  const clearFilters = useAppStore((state) => state.clearFilters);
-  const search = useAppStore((state) => state.search);
-  const setSearch = useAppStore((state) => state.setSearch);
+  const { filters, search, patchFilters, clearFilters, setSearch } =
+    useScopedFilters('transactions');
 
   // El `+` del Inicio navega aquí pidiendo que se abra el formulario.
   const location = useLocation();

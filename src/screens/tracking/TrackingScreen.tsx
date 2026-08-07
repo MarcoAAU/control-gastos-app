@@ -7,6 +7,7 @@ import {
 } from '@/constants';
 import { Card, EmptyState, Skeleton } from '@/components/ui';
 import { ScreenContainer, TopBar } from '@/components/layout';
+import { CategoryRanking } from '@/components/common/CategoryRanking';
 import { PeriodTabs } from '@/components/common/PeriodTabs';
 import { TransactionList } from '@/components/transactions/TransactionList';
 import { categoryBreakdown, dailySeries } from '@/services/metrics/categoryBreakdown';
@@ -17,7 +18,7 @@ import { getPreviousPeriodRange } from '@/services/periods/getPreviousPeriodRang
 import { useAccountLookup } from '@/store/hooks/useAccounts';
 import { useCategories, useTransactions } from '@/store/hooks/useTransactions';
 import { formatDateShort } from '@/utils/date';
-import { CategoryRanking } from './sections/CategoryRanking';
+
 import { PeriodSummary } from './sections/PeriodSummary';
 import styles from './TrackingScreen.module.css';
 

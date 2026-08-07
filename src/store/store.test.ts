@@ -31,8 +31,8 @@ function resetStore(): void {
     status: 'ready',
     startupWarnings: [],
     persistenceError: null,
-    filters: {},
-    search: '',
+    filters: { transactions: {}, reports: {} },
+    search: { transactions: '', reports: '' },
     toasts: [],
   });
 }
@@ -501,10 +501,10 @@ describe('persistencia — un único suscriptor', () => {
     const handle = startPersistence(new AppDataRepository(adapter));
 
     // Filtros, búsqueda, pestaña y toasts son estado efímero: no se persisten.
-    useAppStore.getState().setSearch('mercado');
+    useAppStore.getState().setSearch('transactions', 'mercado');
     useAppStore.getState().setPeriod('month');
     useAppStore.getState().showToast('hola');
-    useAppStore.getState().patchFilters({ types: ['expense'] });
+    useAppStore.getState().patchFilters('transactions', { types: ['expense'] });
 
     await vi.advanceTimersByTimeAsync(400);
     expect(await adapter.getItem(STORAGE_KEY)).toBeNull();
@@ -544,7 +544,7 @@ describe('persistencia — un único suscriptor', () => {
   });
 
   it('el estado persistido es exactamente AppData, sin nada de la interfaz', () => {
-    useAppStore.getState().setSearch('algo');
+    useAppStore.getState().setSearch('reports', 'algo');
     useAppStore.getState().showToast('hola');
 
     const persisted = selectPersisted(useAppStore.getState()) as unknown as Record<string, unknown>;

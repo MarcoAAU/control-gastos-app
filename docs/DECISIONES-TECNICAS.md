@@ -505,6 +505,48 @@ Verificado en la build de producción con datos donde julio tuvo 285.000 en sus 
 
 ---
 
+## ADR-035 — El CSV está hecho para Excel en español, y eso son tres decisiones
+
+**Generar un CSV parece trivial y tiene tres trampas.** Las tres producen un archivo que **abre sin error y muestra basura**, que es el peor fallo posible: el usuario no sabe que tiene que desconfiar.
+
+**1. El separador no es la coma.** Excel usa el separador de la configuración regional; en español es el **punto y coma**, porque la coma es el separador decimal. Un CSV con comas se abre en es-CO con todo amontonado en la columna A.
+
+**2. Sin BOM las tildes se rompen.** Excel para Windows no detecta UTF-8 al abrir un `.csv` por doble clic: asume Windows-1252 y "Café" sale como "CafÃ©". Son tres bytes (`EF BB BF`) y afectan a casi todas las filas de una app en español. Verificado sobre los bytes reales del blob, no sobre el texto: `Blob.text()` descarta el BOM al decodificar, así que comprobarlo ahí habría dado un falso negativo.
+
+**3. Inyección de fórmulas.** Una celda que empieza por `=`, `+`, `-` o `@` la interpreta Excel como **fórmula**. Aquí el texto lo escribe el propio usuario, así que el ataque es remoto — pero el accidente no: quien anote "-500 de descuento" vería su descripción convertida en un número. Se antepone un apóstrofo, que Excel usa justamente para forzar texto.
+
+**El error que cometí y que atrapó el test:** la primera versión aplicaba la guarda a **todo**, así que un gasto de −47.000 salía como `'-47000` y Excel lo trataba como texto — **`SUMA()` habría devuelto cero**, exactamente el fallo que la exportación existe para evitar. La guarda protege el texto del usuario; los números los genera la app y no pueden contener una fórmula. Ahora se distinguen **por tipo, no por su aspecto**: `csvCell` recibe el número crudo y lo formatea él, así que no hay dónde equivocarse en la llamada.
+
+**El importe va con signo** (negativo en los gastos). El modelo guarda siempre positivo y el signo en `type`, que es lo correcto para la app — pero quien exporta a Excel lo hace para sumar, y una columna de positivos exige una fórmula con condición antes de totalizar nada.
+
+**Los ajustes de saldo se marcan, no se ocultan:** si faltaran, la suma del CSV no cuadraría con el saldo que muestra la app.
+
+---
+
+## ADR-036 — Reportes no tiene matemática propia
+
+**Decisión.** Todas las cifras de Reportes —y las del CSV— salen de `services/metrics` y `services/periods`. Ni una suma escrita en la pantalla ni en el exportador.
+
+**Por qué.** Si Reportes calculara por su cuenta, tarde o temprano el informe y la pantalla dirían cifras distintas y no habría manera de saber cuál creer. Es el género exacto de fallo que originó esta reescritura.
+
+**Verificado en la build de producción**, comparando pantalla contra pantalla: Reportes y Seguimiento sobre el mismo mes dan `$2.400.000 / $680.000 / $1.720.000` y **el ranking de categorías completo idéntico, entrada por entrada**. Y en los tests, la suma de la columna *Importe* del CSV es exactamente `periodTotals(...).net`.
+
+---
+
+## ADR-037 — Los filtros se separan por ámbito, no por pantalla ni por copia
+
+**Decisión.** `uiSlice.filters` pasa de ser un juego único a `Record<FilterScope, TransactionFilters>`, con `'transactions'` y `'reports'`. Cada pantalla usa `useScopedFilters(scope)`, que devuelve las acciones ya atadas.
+
+**Las dos alternativas fallaban, cada una por su lado.** Compartir un solo juego significa que acotar un informe para exportarlo recorta en silencio la lista de Movimientos: un filtro que aparece donde nadie lo puso es indistinguible de datos perdidos. Y llevarlos en `useState` local en Reportes —que fue la primera implementación— aislaba bien pero **los perdía al tocar cualquier pestaña de la barra inferior**, y montar un informe con cuatro criterios cuesta bastante más que anotar un gasto.
+
+Verificado en las dos direcciones: con "Tarjeta Nu" puesto en Reportes, Movimientos sigue mostrando sus 10 movimientos sin ninguna ficha; con "Comida" puesto en Movimientos, Reportes conserva "Tarjeta Nu". Y volver a Reportes recupera su filtro y su total ($152.000).
+
+**Por qué un hook y no pasar el ámbito en cada llamada.** Sin él, cada pantalla escribiría la cadena `'reports'` en siete sitios, y basta copiar una línea de la otra pantalla sin cambiarla para que Reportes escriba en los filtros de Movimientos. El fallo no daría ningún error: la otra pantalla aparecería filtrada sola.
+
+**Y la regla de fusión se comparte.** `applyFilterPatch` —que borra las claves puestas a `undefined` en vez de dejarlas dentro (ADR-026)— vive en `services/filters` y la usan el slice y cualquier otro dueño. Escrita dos veces, un día divergirían.
+
+---
+
 ## Decisiones pendientes (se resolverán en su fase)
 
 | Tema | Fase | Nota |

@@ -1,0 +1,95 @@
+.range {
+  margin: var(--space-3) 0;
+  padding-left: var(--space-1);
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-on-surface-variant);
+}
+
+.rangeHint {
+  font-weight: var(--font-weight-regular);
+  opacity: 0.85;
+}
+
+.totals {
+  margin-bottom: var(--space-4);
+}
+
+.totalsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+}
+
+.totalsGrid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.totalLabel {
+  font-size: var(--font-size-label);
+  color: var(--color-on-surface-variant);
+}
+
+.totalValue {
+  font-size: var(--font-size-title-sm);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-on-surface);
+  /* Con tres columnas y cifras de siete dígitos, sin esto una cantidad larga
+     desplaza a sus vecinas y las tres dejan de alinearse. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.income {
+  color: var(--color-success);
+}
+
+.expense {
+  color: var(--color-error);
+}
+
+.totalsCaption {
+  margin-top: var(--space-3);
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-on-surface-variant);
+}
+
+.ranking {
+  margin-bottom: var(--space-4);
+}
+
+.exportTitle {
+  font-size: var(--font-size-title-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-on-surface);
+  margin-bottom: var(--space-2);
+}
+
+.exportHint {
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-on-surface-variant);
+  margin-bottom: var(--space-3);
+}
+
+.exportActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.clearAll {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  min-height: var(--layout-touch-target);
+  color: var(--color-primary);
+  font-size: var(--font-size-body-sm);
+  font-weight: var(--font-weight-semibold);
+}
