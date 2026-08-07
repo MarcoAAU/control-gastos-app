@@ -79,6 +79,40 @@ export function getRollingRange(days: number, reference: ISODate = todayISO()): 
 }
 
 /**
+ * ── CONTEO DE DÍAS ────────────────────────────────────────────────────────
+ * Vive aquí y no en `services/metrics` (donde nació en la Fase 15) porque es
+ * aritmética de calendario, no una métrica: no mira ni un movimiento. Desde
+ * esta fase lo usan dos módulos —el promedio diario y el truncado del periodo
+ * anterior— y tenerlo dentro de uno de ellos habría obligado al otro a
+ * importar "una métrica" para contar días.
+ */
+
+/** Días de un rango civil, ambos extremos incluidos. Nunca menos de 0. */
+export function daysInRange(range: DateRange): number {
+  // Se cuenta con instantes a MEDIODÍA UTC para que ningún cambio de horario
+  // de verano reste ni sume un día. En Colombia no lo hay, pero el dato viaja
+  // en las copias de seguridad y no debe depender de dónde se abra el archivo.
+  const from = Date.parse(`${range.from}T12:00:00Z`);
+  const to = Date.parse(`${range.to}T12:00:00Z`);
+  if (Number.isNaN(from) || Number.isNaN(to)) return 0;
+  const days = Math.round((to - from) / 86_400_000) + 1;
+  return days > 0 ? days : 0;
+}
+
+/**
+ * Días del rango que ya han ocurrido, contando hoy.
+ *
+ * · Periodo futuro entero → 0 (no ha empezado).
+ * · Periodo en curso → del primer día hasta hoy.
+ * · Periodo cerrado → el rango completo.
+ */
+export function elapsedDaysInRange(range: DateRange, reference: ISODate = todayISO()): number {
+  if (reference < range.from) return 0;
+  const end = reference < range.to ? reference : range.to;
+  return daysInRange({ from: range.from, to: end });
+}
+
+/**
  * Los últimos `count` meses terminando en el de `reference`, como `'yyyy-MM'`.
  *
  * Devuelve CLAVES DE MES y no rangos: la serie mensual del Inicio agrupa

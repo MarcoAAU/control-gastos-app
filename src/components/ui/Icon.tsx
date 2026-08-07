@@ -48,6 +48,20 @@ export function Icon({ name, size = 'md', color, label, className }: IconProps) 
     );
   }
 
+  // ── RED DE SEGURIDAD DEL FALLBACK (sólo en desarrollo) ──────────────────
+  // El fallback a texto existe para los emojis heredados de v1, pero acepta
+  // cualquier cadena — así que una clave mal escrita se publica como texto
+  // visible sin fallar nada. Ocurrió: `<Icon name="scale">` pintó la palabra
+  // "scale" en medio de la fila "Balance" de Seguimiento.
+  // Los valores heredados son emojis, nunca identificadores ASCII: si la
+  // clave PARECE una clave y no está registrada, es una errata.
+  if (import.meta.env.DEV && /^[a-z][a-z0-9-]*$/i.test(name)) {
+    console.warn(
+      `[Icon] "${name}" no está en ICON_REGISTRY y se pintará como texto. ` +
+        '¿Es una errata, o falta registrar el icono?',
+    );
+  }
+
   return (
     <span
       className={cn(styles.root, styles.emoji, className)}

@@ -453,6 +453,58 @@ Al ser barras proporcionales sale más barato y más accesible en HTML+CSS que e
 
 ---
 
+## ADR-031 — El periodo anterior se recorta al mismo tramo transcurrido
+
+**Decisión.** Un periodo en curso se compara contra el **mismo número de días** del anterior, no contra el anterior completo. El rótulo lo dice: *"vs. mismos días del mes pasado"*.
+
+**El problema, que es de honestidad y no de cálculo.** El 7 de agosto llevas 655.000 gastados; julio entero fueron 1.915.000. Comparar esas dos cifras da "−66%" y un cartel verde de enhorabuena — por llevar siete días de mes. El día 31 el mismo cartel se habrá dado la vuelta sin que hayas cambiado un hábito. Los dos números están bien; lo que está mal es presentarlos como comparables. Una app que felicita al usuario por gastar poco a principios de mes, **todos los meses**, enseña a ignorar sus propios avisos.
+
+Verificado en la build de producción con datos donde julio tuvo 285.000 en sus primeros 7 días y 1.915.000 en total: la app muestra **+130%** contra el tramo correcto, no −66% contra el mes entero, y escribe debajo *"Comparado con 1 jul – 7 jul: $2.400.000 de ingresos y $285.000 de gastos"* para que la cifra se pueda comprobar en vez de tener que creerla.
+
+**Se cuentan días, no se copia la fecha.** Truncar "hasta el mismo día del mes" se rompe solo: el 31 de marzo no existe en febrero. Contando días transcurridos, el recorte topa con el final del periodo anterior sin ningún caso especial, y resuelve igual de bien el año bisiesto y la semana que cruza el cambio de año. Hay tests para los cinco bordes.
+
+**`sameLength` no significa "la comparación es justa".** Julio completo (31 días) contra junio completo (30) da `false` y es la comparación mensual de toda la vida: avisar cada mes de 31 días sería ruido. Lo que importa es `isPartial && !sameLength` — el 30 de marzo, con 30 días transcurridos contra los 28 de febrero. Sólo entonces aparece el aviso.
+
+**El periodo actual se muestra completo** (1–31 de agosto), igual que en el Inicio: si las dos pantallas definieran "este mes" de forma distinta, sus totales no cuadrarían. Junto al rango se dice cuántos días llevas, porque si no quedaba un "3 – 9 ago" al lado de un "comparado con 27 – 31 jul" y la resta no salía.
+
+---
+
+## ADR-032 — La aritmética no opina; el color sí
+
+**Decisión.** `comparePeriods` devuelve la dirección desnuda (`up`/`down`/`flat`). Es `ComparisonBadge` quien decide si eso es bueno, mediante una prop `polarity`.
+
+**Por qué.** Un +20% en ingresos es buena noticia; un +20% en gastos es la contraria. Si el color se decidiera en el servicio, la aritmética tendría que saber qué es un "gasto", y bastaría reutilizarla para otra métrica para que los colores salieran al revés sin que nada fallara.
+
+**La flecha y el color codifican cosas distintas, a propósito.** La flecha dice si el número subió o bajó; el color, si eso conviene. Gastar un 30% menos sale con flecha **abajo** y en **verde**. Fundirlos —flecha arriba siempre que "va bien"— haría que el gesto contradijera la cifra que tiene al lado.
+
+**División por cero → `null` → «—».** Las tres salidas tentadoras son mentira: `Infinity` se pinta tal cual, `100%` afirma que se duplicó algo que no había, `0%` afirma que no cambió nada cuando cambió todo. El importe absoluto sí se conserva: *"sin datos del mes pasado, +$340.000"* informa; *"+∞%"* no. Es el caso **normal** del primer mes de uso, no un borde exótico — verificado: las pestañas Semana y Año lo muestran correctamente con datos que sólo cubren agosto.
+
+**El denominador va en valor absoluto.** Con un balance anterior negativo, dividir por él invertiría el signo: pasar de −100.000 a −200.000 (empeorar) saldría como "+100%" de mejora.
+
+---
+
+## ADR-033 — Seguimiento es una pantalla, no cuatro pestañas-componente
+
+**Decisión.** El plan preveía `DailyTab`, `WeeklyTab`, `MonthlyTab` y `YearlyTab`. Se implementa una sola pantalla con el *bucket* de la serie parametrizado.
+
+**Por qué se desvía del plan.** Serían cuatro archivos idénticos salvo en una línea —qué se agrupa— y por tanto cuatro sitios donde arreglar cada fallo y tres oportunidades de olvidarse. Es exactamente el "no dejes archivos duplicados" que gobierna esta reescritura.
+
+**La vista diaria no tiene gráfica.** Una serie de un solo punto no es una gráfica: no informa de nada y ocupa igual. El día muestra sus movimientos, que es lo que se quiere ver al mirar un día concreto. Semana y mes se agrupan por día; el año, por mes.
+
+**La serie diaria se recorta hasta hoy.** Dibujar los veinticuatro días que faltan del mes como barras a cero sugiere que no se gastó nada en ellos, cuando lo cierto es que aún no han ocurrido.
+
+**El ranking de categorías no es otra dona.** El Inicio ya tiene una y responde a "¿cómo se reparte?". Ésta responde a "¿cuánto exactamente, y en qué orden?", que en una dona exige medir ángulos. Además no arrastra Recharts, así que pinta con la pantalla en vez de esperar al chunk diferido — y muestra **todas** las categorías, sin recortar a seis: aquí el usuario viene expresamente a revisar.
+
+---
+
+## ADR-034 — El fallback de iconos ahora avisa en desarrollo
+
+**Problema encontrado en la Fase 16.** `<Icon name="scale">` pintó la palabra **"scale"** en medio de la fila "Balance" de Seguimiento. La clave no estaba en `ICON_REGISTRY`, y el fallback a texto —que existe para los emojis heredados de v1 (ADR-011)— la aceptó sin rechistar.
+
+**El fallback es correcto y se mantiene**: es lo que permite que los iconos del usuario sobrevivan sin migrar un solo dato. Lo que faltaba era distinguir un emoji heredado de una errata. Los valores heredados son emojis, nunca identificadores ASCII: si la clave *parece* una clave y no está registrada, es un error de escritura. Ahora `Icon` lo avisa por consola en desarrollo. En producción no se avisa —no serviría de nada al usuario— y el comportamiento no cambia.
+
+---
+
 ## Decisiones pendientes (se resolverán en su fase)
 
 | Tema | Fase | Nota |

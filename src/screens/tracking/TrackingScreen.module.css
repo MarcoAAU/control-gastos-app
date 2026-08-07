@@ -1,0 +1,19 @@
+.range {
+  margin: var(--space-3) 0 var(--space-3);
+  padding-left: var(--space-1);
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-on-surface-variant);
+  /* Nada de `text-transform: capitalize` aquí: capitaliza CADA palabra, así
+     que "1 ago 2026" salía como "1 Ago 2026". En español los meses van en
+     minúscula, y el formateador ya los devuelve bien. */
+}
+
+.elapsed {
+  font-weight: var(--font-weight-regular);
+  opacity: 0.85;
+}
+
+.section {
+  margin-bottom: var(--space-4);
+}

@@ -133,6 +133,9 @@ export const ICON_REGISTRY = {
   // ── Indicadores y metadatos ─────────────────────────────────────────────
   income: ArrowUpRight,
   expense: ArrowDownRight,
+  // Balance: lo que queda al restar. `Scale` ya estaba importada para
+  // `cat-ajuste`, así que registrar esta clave no añade ni un byte.
+  scale: Scale,
   up: TrendingUp,
   down: TrendingDown,
   calendar: Calendar,

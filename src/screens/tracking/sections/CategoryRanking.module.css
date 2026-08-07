@@ -1,0 +1,84 @@
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.title {
+  font-size: var(--font-size-title-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-on-surface);
+}
+
+.total {
+  font-size: var(--font-size-body-sm);
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-on-surface-variant);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    'head head'
+    'track share';
+  align-items: center;
+  gap: 4px var(--space-2);
+}
+
+.head {
+  grid-area: head;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-body-sm);
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-on-surface);
+}
+
+.amount {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-on-surface);
+}
+
+.track {
+  grid-area: track;
+  height: 6px;
+  border-radius: var(--shape-full);
+  background: var(--color-surface-container-high);
+  overflow: hidden;
+}
+
+.bar {
+  height: 100%;
+  border-radius: var(--shape-full);
+  /* Una categoría con el 0,2% del gasto seguiría siendo visible: con 0px
+     parecería un fallo de pintado en vez de una cantidad pequeña. */
+  min-width: 3px;
+}
+
+.share {
+  grid-area: share;
+  font-size: var(--font-size-label);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-on-surface-variant);
+  min-width: 4ch;
+  text-align: right;
+}
