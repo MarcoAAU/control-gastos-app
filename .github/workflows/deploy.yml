@@ -1,0 +1,83 @@
+# Publica la app en GitHub Pages.
+#
+# ── POR QUÉ LA COMPUERTA DE CALIDAD VA ANTES DEL DESPLIEGUE ──────────────────
+# Esto publica sobre la URL donde el usuario tiene sus datos financieros
+# reales, y donde apunta el APK ya instalado. Un despliegue roto no es una
+# página fea: es una app de dinero que no abre, con la migración v1 → v2 a
+# medio camino. Por eso `lint`, `typecheck`, `test` y `build` corren ANTES de
+# publicar nada, y cualquier fallo cancela el despliegue.
+#
+# ── LO QUE NO HACE ESTE WORKFLOW ────────────────────────────────────────────
+# No toca el APK. Regenerar el APK es un paso manual en PWABuilder que exige
+# el keystore original; ver docs/DESPLIEGUE.md.
+
+name: Desplegar en GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # Permite relanzar el despliegue a mano sin tener que hacer un commit vacío.
+  workflow_dispatch:
+
+# Permisos mínimos: sólo leer el repo y publicar en Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Si se empujan dos commits seguidos, se despliega el último y se cancela el
+# anterior. Sin esto, dos despliegues simultáneos pueden pisarse.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Verificar y construir
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          # Cachea ~/.npm entre ejecuciones usando package-lock.json como clave.
+          cache: 'npm'
+
+      # `npm ci` y no `npm install`: instala EXACTAMENTE lo del lockfile. Con
+      # `install`, una dependencia transitiva podría subir de versión sola y
+      # desplegarse algo distinto de lo que se probó en local.
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Comprobar tipos
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm run test
+
+      # `build` encadena dos verificaciones que pueden tumbar el despliegue:
+      #  · check-bundle-budget.mjs — falla por encima de 100 kB gz iniciales.
+      #  · verify-deploy.mjs — falla si el `base`, el `scope`, el `start_url` o
+      #    el nombre del Service Worker cambiaron; cualquiera de esos rompe el
+      #    APK ya instalado o deja la app vieja sirviéndose para siempre.
+      - name: Construir y verificar
+        run: npm run build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Publicar
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

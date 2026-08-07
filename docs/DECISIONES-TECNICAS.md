@@ -233,6 +233,37 @@ Ninguna fase se da por cerrada si esa cadena no pasa limpia.
 
 ---
 
+## ADR-016 — El despliegue se verifica a sí mismo antes de publicar
+
+**Decisión.** `npm run build` encadena dos scripts que pueden tumbar la compilación: `check-bundle-budget.mjs` y `verify-deploy.mjs`. El workflow de Pages no publica si alguno falla.
+
+**Por qué un script y no una lista de comprobación.** Todo lo que verifica `verify-deploy.mjs` es un fallo **invisible en desarrollo** que rompe la app publicada o el APK ya instalado:
+
+| Si cambia… | Lo que pasa | Por qué no se ve antes |
+|---|---|---|
+| `base` | Los assets dan 404 | En `vite dev` todo se sirve desde la raíz |
+| el nombre `sw.js` | El Service Worker de v1 sigue sirviendo la app vieja **para siempre** | En local no hay un SW antiguo con el que competir |
+| `scope` / `start_url` | El APK se abre con barra de direcciones, o en el navegador | El TWA no existe en local |
+| falta `.nojekyll` | Pages descarta lo que empiece por `_` | Pages no interviene en local |
+
+Ninguno de estos avisa: la app simplemente no arranca, o arranca la antigua. Un despliegue roto aquí no es una página fea — es una app de dinero que no abre, con la migración v1 → v2 a medio camino.
+
+**Verificado** que el script falla de verdad: alterando `scope` y `display` en el manifest generado, sale con código 1 y nombra ambos problemas.
+
+**El despliegue va en la Fase 10 y no al final** a propósito. Los riesgos externos —Service Worker, TWA, keystore, migración sobre datos reales— se validan más barato con una app en paridad que con ocho funcionalidades nuevas encima.
+
+---
+
+## ADR-017 — El keystore del APK no vive en el repositorio, y el repositorio lo impide
+
+**Contexto.** El keystore original **existe** (encontrado en `Downloads/Mis Gastos - Google Play package/`), lo que elimina el riesgo crítico que el plan marcaba para esta fase: sin él, actualizar el APK habría exigido desinstalar, y desinstalar borra los datos del WebView.
+
+**Decisión.** `.gitignore` bloquea `*.keystore`, `*.jks`, `signing-key-info.txt`, `*.apk` y `*.aab`.
+
+**Por qué es una regla y no una advertencia.** El repositorio es público. Quien tenga el keystore puede firmar una app que Android acepta como actualización legítima de ésta. Y subirlo **una sola vez** lo deja en el historial de git de forma permanente: borrarlo en un commit posterior no lo retira: habría que rotar la clave, y rotar la clave obliga a desinstalar la app, que es exactamente el desastre que se quiere evitar.
+
+---
+
 ## Decisiones pendientes (se resolverán en su fase)
 
 | Tema | Fase | Nota |

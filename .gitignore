@@ -34,3 +34,16 @@ pnpm-debug.log*
 
 # Datos reales de usuario (nunca deben commitearse sin anonimizar)
 docs/fixtures/*-real.json
+
+# Claves de firma del APK. NUNCA en el repositorio.
+#
+# Quien tenga el keystore puede publicar una app que Android acepta como
+# actualización legítima de ésta. Y como el repositorio es público, subirlo una
+# sola vez lo deja en el historial de git para siempre: borrarlo después no
+# sirve de nada, habría que generar una clave nueva — lo que obliga a
+# desinstalar la app y pierde los datos del usuario.
+*.keystore
+*.jks
+signing-key-info.txt
+*.apk
+*.aab
