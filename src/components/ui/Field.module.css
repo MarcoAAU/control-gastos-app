@@ -137,3 +137,19 @@
   color: var(--color-error);
   line-height: var(--line-height-body);
 }
+
+/* ── Texto de varias líneas (TextArea) ──────────────────────────────────── */
+
+/* El contenedor alinea al centro para los campos de una línea; con un
+   textarea alto eso dejaría el texto flotando en mitad de la caja. */
+.controlMultiline {
+  align-items: stretch;
+}
+
+.textarea {
+  resize: vertical;
+  /* Sin esto el textarea hereda la fuente del navegador (monoespaciada en
+     algunos) y desentona con el resto de campos. */
+  font-family: inherit;
+  line-height: var(--line-height-relaxed);
+}

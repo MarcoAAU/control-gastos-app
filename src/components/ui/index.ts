@@ -41,6 +41,9 @@ export { ToastHost } from './ToastHost';
 export { TextField } from './TextField';
 export type { TextFieldProps } from './TextField';
 
+export { TextArea } from './TextArea';
+export type { TextAreaProps } from './TextArea';
+
 export { AmountField } from './AmountField';
 export type { AmountFieldProps } from './AmountField';
 

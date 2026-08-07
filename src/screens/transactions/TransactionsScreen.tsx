@@ -51,7 +51,7 @@ const FORM_ID = 'transaction-form';
 export default function TransactionsScreen() {
   const transactions = useTransactions();
   const accounts = useAccounts();
-  const { categories, categoryById } = useCategories();
+  const { categories, subcategories, categoryById, subcategoryById } = useCategories();
 
   const addTransaction = useAppStore((state) => state.addTransaction);
   const updateTransaction = useAppStore((state) => state.updateTransaction);
@@ -253,6 +253,7 @@ export default function TransactionsScreen() {
           transaction={editing}
           accounts={accounts}
           categories={categories}
+          subcategories={subcategories}
           onSubmit={handleSubmit}
         />
       </Sheet>
@@ -299,13 +300,24 @@ export default function TransactionsScreen() {
                 {selected.description || categoryById.get(selected.categoryId)?.name}
               </span>
               <span className={styles.detailMeta}>
-                {categoryById.get(selected.categoryId)?.name ?? 'Sin categoría'} ·{' '}
-                {accountById.get(selected.accountId)?.name ?? '—'}
+                {categoryById.get(selected.categoryId)?.name ?? 'Sin categoría'}
+                {/* La subcategoría cuelga de la categoría, así que se muestra
+                    pegada a ella y no como un dato suelto más. */}
+                {selected.subcategoryId && (
+                  <> › {subcategoryById.get(selected.subcategoryId)?.name}</>
+                )}{' '}
+                · {accountById.get(selected.accountId)?.name ?? '—'}
               </span>
               <span className={styles.detailMeta}>
                 {formatDateTime(selected.date, selected.time)}
               </span>
             </div>
+
+            {/* Las observaciones sólo aparecen si las hay: un bloque vacío
+                rotulado "Observaciones" es ruido en una hoja pequeña. */}
+            {selected.notes && !confirming && (
+              <p className={styles.detailNotes}>{selected.notes}</p>
+            )}
 
             {confirming ? (
               <p className={styles.confirmText}>

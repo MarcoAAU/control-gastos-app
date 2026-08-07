@@ -80,3 +80,18 @@
   color: var(--color-on-surface-variant);
   padding: var(--space-2) 0;
 }
+
+/* Observaciones del movimiento (Fase 13). */
+.detailNotes {
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-on-surface-variant);
+  padding: var(--space-3);
+  margin-bottom: var(--space-2);
+  border-radius: var(--shape-md);
+  background: var(--color-surface-container-high);
+  /* Respeta los saltos de línea que escribió el usuario sin permitir que una
+     palabra larga desborde la hoja. */
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}

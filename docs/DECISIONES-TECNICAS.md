@@ -325,6 +325,20 @@ Se parecen tanto —las dos son un campo de importe que mueve el saldo— que co
 
 ---
 
+## ADR-022 — Los campos secundarios del movimiento van plegados
+
+**Decisión.** Hora, subcategoría y observaciones existen, pero detrás de "Más detalles". Al **editar** un movimiento que ya los tiene rellenos, la sección se abre sola.
+
+**Por qué.** El caso normal es anotar un gasto en la cola del supermercado: importe, categoría y poco más. Con siete campos a la vista, anotar deja de ser rápido — y una app de gastos que cuesta usar se deja de usar, que es un fallo peor que no tener el campo. Plegarlos conserva la función sin cobrarle el coste a quien no la necesita.
+
+**La excepción importa tanto como la regla:** esconder datos que ya existen sería peor que mostrarlos. Si el movimiento trae notas, subcategoría o una hora distinta de `00:00`, la sección arranca abierta.
+
+**Consecuencia del orden por `fecha + hora`.** Los movimientos migrados de v1 llegan todos con `'00:00'`, porque v1 no guardaba la hora. Sin desempate, un día lleno de `'00:00'` tendría orden indeterminado y la lista se barajaría sola entre renders — parece un fallo grave aunque los datos estén bien. `txSortKey` desempata por `createdAt`, y hay tests que fijan la estabilidad del orden. `formatDateTime` omite la hora cuando vale `'00:00'`: mostrarla en cientos de movimientos antiguos sería ruido que además sugiere una precisión que el dato no tiene.
+
+**La subcategoría se limpia al cambiar de categoría**, en el formulario igual que en el store (ADR-018): "Gasolina" pertenece a "Transporte", y arrastrarla a "Salud" dejaría un nivel 2 que no cuelga de su nivel 1.
+
+---
+
 ## Decisiones pendientes (se resolverán en su fase)
 
 | Tema | Fase | Nota |

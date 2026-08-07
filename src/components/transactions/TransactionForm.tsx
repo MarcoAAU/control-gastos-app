@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import type { Account, Category, ID, Transaction, TransactionType } from '@/models';
-import { AmountField, Icon, Select, TextField } from '@/components/ui';
+import type { Account, Category, ID, Subcategory, Transaction, TransactionType } from '@/models';
+import { AmountField, Icon, Select, TextArea, TextField } from '@/components/ui';
 import type { TransactionDraft } from '@/store/slices/transactionsSlice';
-import { todayISO } from '@/utils/date';
+import { nowTime, todayISO } from '@/utils/date';
 import { parseAmountInput, toAmountInputValue } from '@/utils/money';
 import { cn } from '@/utils/cn';
 import { TypeToggle } from './TypeToggle';
@@ -13,6 +13,8 @@ export interface TransactionFormProps {
   transaction?: Transaction | undefined;
   accounts: readonly Account[];
   categories: readonly Category[];
+  /** Todas las activas; el formulario filtra las de la categoría elegida. */
+  subcategories: readonly Subcategory[];
   /** Cuenta preseleccionada al dar de alta. */
   defaultAccountId?: ID | undefined;
   onSubmit(draft: TransactionDraft): void;
@@ -35,14 +37,19 @@ interface FormErrors {
  * (`app.js:770-795`), con una rama distinta para alta y para edición, y ahí
  * era donde se descuadraba la contabilidad. Aquí el saldo se deriva.
  *
- * Los campos `time`, `subcategoryId` y `notes` existen en el modelo desde la
- * Fase 3 pero no aparecen todavía en la interfaz: llegan en la Fase 13. Se
- * rellenan con valores por defecto para que ningún movimiento quede a medias.
+ * ── CAMPOS SECUNDARIOS PLEGADOS (Fase 13) ────────────────────────────────
+ * Hora, subcategoría y observaciones existen, pero detrás de "Más detalles".
+ * El caso normal —anotar un gasto en la cola del supermercado— necesita
+ * importe, categoría y poco más; con seis campos a la vista, anotar deja de
+ * ser rápido y se deja de hacer. Al EDITAR un movimiento que ya los tiene
+ * rellenos, la sección se abre sola: esconder datos que existen sería peor
+ * que mostrarlos.
  */
 export function TransactionForm({
   transaction,
   accounts,
   categories,
+  subcategories,
   defaultAccountId,
   onSubmit,
   formId,
@@ -56,6 +63,19 @@ export function TransactionForm({
   const [categoryId, setCategoryId] = useState(transaction?.categoryId ?? '');
   const [description, setDescription] = useState(transaction?.description ?? '');
   const [errors, setErrors] = useState<FormErrors>({});
+
+  // Al crear se propone la hora actual; al editar se respeta la que tenía.
+  // Los movimientos migrados de v1 llegan con '00:00' (no traían hora).
+  const [time, setTime] = useState(transaction?.time ?? nowTime());
+  const [subcategoryId, setSubcategoryId] = useState(transaction?.subcategoryId ?? '');
+  const [notes, setNotes] = useState(transaction?.notes ?? '');
+
+  const hasSecondaryData =
+    transaction !== undefined &&
+    ((transaction.notes ?? '') !== '' ||
+      transaction.subcategoryId !== null ||
+      (transaction.time !== '00:00' && transaction.time !== ''));
+  const [showMore, setShowMore] = useState(hasSecondaryData);
 
   /**
    * Categorías ofrecidas al usuario.
@@ -76,6 +96,17 @@ export function TransactionForm({
     [categories, type],
   );
 
+  /**
+   * Subcategorías de la categoría elegida.
+   *
+   * Una subcategoría sólo tiene sentido dentro de su categoría: ofrecer
+   * "Mercado" con "Transporte" seleccionado produciría datos incoherentes.
+   */
+  const visibleSubcategories = useMemo(
+    () => (categoryId ? subcategories.filter((s) => s.categoryId === categoryId) : []),
+    [subcategories, categoryId],
+  );
+
   function handleTypeChange(next: TransactionType): void {
     setType(next);
     // Si la categoría elegida no aplica al nuevo tipo, se limpia en vez de
@@ -83,7 +114,17 @@ export function TransactionForm({
     const stillValid = categories.some(
       (c) => c.id === categoryId && (c.kind === next || c.kind === 'both'),
     );
-    if (!stillValid) setCategoryId('');
+    if (!stillValid) {
+      setCategoryId('');
+      setSubcategoryId('');
+    }
+  }
+
+  function handleCategoryChange(next: ID): void {
+    setCategoryId(next);
+    // La subcategoría pertenece a la categoría anterior: arrastrarla dejaría
+    // el movimiento con un nivel 2 que no cuelga de su nivel 1.
+    setSubcategoryId('');
   }
 
   function handleSubmit(event: React.FormEvent): void {
@@ -109,10 +150,10 @@ export function TransactionForm({
       accountId,
       categoryId,
       description,
-      // Se conservan al editar; en el alta quedan con su valor por defecto.
-      time: transaction?.time ?? '00:00',
-      subcategoryId: transaction?.subcategoryId ?? null,
-      notes: transaction?.notes ?? '',
+      time: time || '00:00',
+      // El `<select>` usa cadena vacía para "ninguna"; el modelo usa `null`.
+      subcategoryId: subcategoryId || null,
+      notes,
     });
   }
 
@@ -144,7 +185,7 @@ export function TransactionForm({
                 // El color de la categoría lo elige el usuario: es un dato, no
                 // un token, y por eso se aplica inline.
                 style={active ? { color: category.color, background: `${category.color}1f` } : undefined}
-                onClick={() => setCategoryId(category.id)}
+                onClick={() => handleCategoryChange(category.id)}
               >
                 <Icon name={category.icon} size="md" />
                 <span className={styles.categoryName}>{category.name}</span>
@@ -181,6 +222,51 @@ export function TransactionForm({
         placeholder="Opcional — p. ej. Mercado del mes"
         maxLength={120}
       />
+
+      {/* Los campos secundarios van plegados: anotar un gasto rápido no debería
+          exigir pasar por seis campos. Ver la nota de cabecera. */}
+      <button
+        type="button"
+        className={styles.moreToggle}
+        onClick={() => setShowMore((open) => !open)}
+        aria-expanded={showMore}
+        aria-controls={`${formId}-more`}
+      >
+        <Icon name={showMore ? 'chevron-down' : 'chevron-right'} size="sm" />
+        {showMore ? 'Menos detalles' : 'Más detalles'}
+        <span className={styles.moreHint}>hora, subcategoría, notas</span>
+      </button>
+
+      {showMore && (
+        <div id={`${formId}-more`} className={styles.moreFields}>
+          <TextField label="Hora" type="time" value={time} onChange={setTime} />
+
+          {visibleSubcategories.length > 0 ? (
+            <Select
+              label="Subcategoría"
+              value={subcategoryId}
+              onChange={setSubcategoryId}
+              options={visibleSubcategories.map((sub) => ({ value: sub.id, label: sub.name }))}
+              placeholder="Ninguna"
+            />
+          ) : (
+            <p className={styles.noSubs}>
+              {categoryId
+                ? 'Esta categoría no tiene subcategorías. Puedes crearlas desde Ajustes → Categorías.'
+                : 'Elige una categoría para poder afinar con una subcategoría.'}
+            </p>
+          )}
+
+          <TextArea
+            label="Observaciones"
+            value={notes}
+            onChange={setNotes}
+            placeholder="Opcional — algo que quieras recordar de este movimiento"
+            maxLength={500}
+            rows={3}
+          />
+        </div>
+      )}
     </form>
   );
 }
