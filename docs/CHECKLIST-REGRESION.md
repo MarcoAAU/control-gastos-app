@@ -149,3 +149,14 @@ Medido sobre el build de producción, en las 8 pantallas y en los 2 temas.
 - **El evento `change` de `prefers-color-scheme`.** El emulador cambia `matches` sin emitirlo (verificado con un `addEventListener` propio). La resolución sí se comprobó, recargando en cada esquema: «Sistema» da oscuro con el sistema en oscuro y claro con el sistema en claro.
 - **Animaciones y transiciones en marcha.** La pestaña no compone fotogramas (`document.timeline.currentTime` no avanza y `requestAnimationFrame` no se dispara), así que toda propiedad con `transition` se queda congelada en su valor inicial. Es la causa del único "fallo" de contraste que aparecía en la barra inferior: medido desde los tokens, da 6,24:1 inactivo y 5,68:1 activo.
 - **Lighthouse.** No se ejecutó: requiere un Chrome controlable desde fuera. Las comprobaciones 44-47 son las mismas que audita su apartado de accesibilidad, hechas a mano sobre las 8 pantallas y los 2 temas.
+
+## Costura de seguridad (Fase 19) — la pasarela no debe notarse
+
+| # | Comportamiento | Fase 19 | Fase 20 |
+|---|---|---|---|
+| 61 | La app arranca directa: `AuthGate` no muestra ninguna pantalla intermedia | ✅ | |
+| 62 | Un enlace profundo (`#/cuentas`) entra sin pasar por nada | ✅ | |
+| 63 | Las 8 pantallas se alcanzan igual que antes, sin errores de consola | ✅ | |
+| 64 | El proveedor activo nunca devuelve `'locked'` (fijado por tests) | ✅ | |
+
+**Nota 8 — lo que la Fase 19 NO hace, y hay que decirlo al usuario.** No existe PIN, ni biometría, ni bloqueo por inactividad, ni cifrado. Sólo hay una interfaz, una implementación vacía y el sitio donde enchufarla. Y cuando se implemente, el texto de la interfaz **no podrá prometer que los datos están protegidos**: viven en `localStorage` en claro, así que un PIN disuade a quien coge el teléfono un momento pero no protege frente a nadie con acceso real al dispositivo. La única protección real contra la pérdida de datos sigue siendo el respaldo exportable de Ajustes.

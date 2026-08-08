@@ -1,4 +1,5 @@
 import { AppRouter } from '@/router/AppRouter';
+import { AuthGate } from '@/components/security/AuthGate';
 import { useAppliedTheme } from '@/hooks/useAppliedTheme';
 
 /**
@@ -8,11 +9,20 @@ import { useAppliedTheme } from '@/hooks/useAppliedTheme';
  * renderizar, así que aquí el estado ya está listo y no hay pantalla de carga
  * intermedia.
  *
- * Lo único que hace este componente es aplicar el tema. La lógica vive en
- * `useAppliedTheme` porque tiene tres piezas —preferencia guardada, esquema
- * del sistema y color de la barra de estado— y ninguna es asunto de la raíz.
+ * `AuthGate` envuelve al enrutado y no al revés: así ninguna ruta —tampoco un
+ * enlace profundo a `#/cuentas`— puede alcanzarse sin pasar por él. Hoy es
+ * transparente: el proveedor de seguridad no bloquea nada (Fase 19).
+ *
+ * El tema se aplica en `useAppliedTheme`, que junta tres piezas —preferencia
+ * guardada, esquema del sistema y color de la barra de estado— y ninguna es
+ * asunto de la raíz.
  */
 export default function App() {
   useAppliedTheme();
-  return <AppRouter />;
+
+  return (
+    <AuthGate>
+      <AppRouter />
+    </AuthGate>
+  );
 }

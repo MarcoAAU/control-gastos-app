@@ -646,11 +646,33 @@ Si falla hay dos salidas legítimas: registrar el icono o corregir la errata. Si
 
 ---
 
+## ADR-045 — La seguridad se deja cosida, no implementada, y el README dice la verdad incómoda
+
+**Contexto.** El encargo fue explícito: *"No implementar todavía, solo dejar preparada la arquitectura"* para PIN, biometría y bloqueo automático.
+
+**Decisión.** Una interfaz de cuatro métodos (`getStatus`, `unlock`, `lock`, `subscribe`), una implementación que no hace nada, un `<AuthGate>` transparente alrededor del enrutado y un README. Sin dependencias nuevas. Activar el bloqueo será **cambiar una línea** en `services/security/index.ts` y escribir la pantalla de desbloqueo: ninguna otra pantalla ni servicio se toca.
+
+**Por qué colocar la pasarela ahora, si no bloquea nada.** Porque *dónde* va no es un detalle. Tiene que quedar por dentro del arranque —los datos se hidratan antes, o al desbloquear se vería la app vacía un instante— y por fuera del enrutado, para que un enlace profundo a `#/cuentas` no pueda saltárselo. Colocarla hoy, cuando se puede comprobar que no cambia nada, es más barato que colocarla el día que además haya que depurar un PIN.
+
+**Un objeto que no hace nada, en vez de `SecurityProvider | null`.** Con `null`, cada punto de uso necesita un `if` previo, y ese `if` es exactamente donde se cuela el fallo el día que sí haya bloqueo: basta olvidarlo en un sitio para que una pantalla se lo salte. Con un objeto que siempre responde `'disabled'` no hay ninguna rama que olvidar.
+
+**`'disabled'` no es `'unlocked'`.** Sin bloqueo configurado no hay nada que desbloquear y no debe existir pantalla intermedia; con bloqueo superado sí hay una sesión que el auto-bloqueo puede cerrar. Fundirlos obligaría al temporizador a adivinar en cuál de las dos situaciones está.
+
+**`unlock()` es asíncrono desde el primer día**, aunque un PIN local se verifique al instante: la biometría del sistema y cualquier comprobación remota lo son, y convertirlo en `Promise` más tarde propagaría `await` por todos los llamantes.
+
+**Y la parte que importa de verdad, escrita en el README para que nadie la descubra tarde:** los datos viven en `localStorage` **en claro**, así que un PIN aquí sería *una cortina, no una caja fuerte*. Disuade a quien coge el teléfono desbloqueado un momento; no protege frente a nadie con acceso real al dispositivo, porque los datos se leen enteros desde las herramientas de desarrollo, desde otra pestaña del mismo origen o desde un respaldo del sistema. Por eso `unlock()` devuelve un resultado y no una clave: **no hay nada que descifrar**.
+
+De ahí una regla que no se negocia: ningún texto de la interfaz podrá prometer "tus datos están protegidos con PIN". Sería falso, y en una app de finanzas una falsa sensación de seguridad es peor que no tener ninguna. Protección real significaría cifrar el documento con una clave derivada del PIN vía `crypto.subtle` — y aceptar antes, con el usuario, que **olvidar el PIN es perder los datos**. Sin esa conversación, cifrar es una forma elaborada de borrarle el dinero a alguien.
+
+**Verificado:** las 8 pantallas se alcanzan igual, el enlace profundo a `#/cuentas` entra directo, cero errores de consola, y la pasarela cuesta 0,17 kB gz. Los tests fijan el invariante: el proveedor activo nunca devuelve `'locked'`, que es lo único de lo que depende que `AuthGate` sea transparente.
+
+---
+
 ## Decisiones pendientes (se resolverán en su fase)
 
 | Tema | Fase | Nota |
 |---|---|---|
 | Virtualización de listas largas | 15+ | Umbral anotado (~500 ítems). No se implementa: con el filtrado en dos pasos, la lista pintada rara vez llega ahí, y virtualizar rompe Ctrl+F del navegador |
 | Formato exacto del CSV de reportes | 17 | Locale es-CO: separador `;` y coma decimal, para que Excel lo abra bien |
-| PIN / biometría / cifrado en reposo | 19 | Solo se deja la costura arquitectónica (interfaz + implementación no-op). **No se implementa nada** en esta reescritura |
+| PIN / biometría / cifrado en reposo | ✅ 19 | Costura puesta (interfaz + no-op + `AuthGate`). **Nada implementado**, y así se queda en esta reescritura. Ver `src/services/security/README.md`: sin cifrar el documento, un PIN es una cortina, no una caja fuerte |
 | Migración de `localStorage` a IndexedDB | — | Diferida. El `StorageAdapter` ya deja la puerta abierta |
