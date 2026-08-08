@@ -668,6 +668,48 @@ De ahí una regla que no se negocia: ningún texto de la interfaz podrá promete
 
 ---
 
+## ADR-046 — El aviso post-migración se decide con `migratedNow`, no con una marca guardada
+
+**Contexto.** La verificación final destapó un hueco: el plan pedía (§5, paso 10) un aviso en el primer arranque tras migrar, y `MIGRATION_NOTICE_KEY` llevaba desde la Fase 4 declarado **y sin usar en ninguna parte**. Con una migración limpia —sin incidencias— el usuario abría la v2 y no veía absolutamente nada.
+
+**Por qué eso importa más de lo que parece.** Al actualizar, la cifra rotulada "Ingresos" en el Inicio **cambia de valor**, porque en v1 mostraba por error el saldo total de las cuentas (`app.js:221`). Sin aviso, el usuario abre una app de finanzas y ve un número distinto del que recordaba, sin explicación: indistinguible de que la actualización le rompió los datos. Es exactamente la confusión que originó toda la reescritura, reapareciendo en el último paso.
+
+**Decisión.** `bootstrap.ts` lee `LoadResult.migratedNow` —que ya existía y estaba bien calculado, sólo que nadie lo consultaba— y antepone tres frases a `startupWarnings`: los saldos NO han cambiado, la cifra de "Ingresos" sí y por qué, y que los datos anteriores siguen ahí pero conviene exportar un respaldo.
+
+**Por qué no hace falta ninguna marca persistida.** `migratedNow` sólo es `true` en el arranque en que la conversión ocurre de verdad; a partir del siguiente ya existe `gastos_app_data_v2` y no se migra nada. El aviso sale **exactamente una vez** sin guardar un "ya lo vio" que habría que migrar, validar y limpiar. `MIGRATION_NOTICE_KEY` queda sin uso: era la solución al problema equivocado.
+
+**Y reutiliza `StartupBanner` en vez de estrenar una hoja.** El componente ya renderiza una lista de avisos con su botón "Entendido", ya está probado y ya es donde el usuario espera encontrar mensajes del arranque. Una hoja modal nueva, a las puertas de una release, sería código sin verificar en el camino crítico.
+
+Verificado de extremo a extremo en un perfil limpio: primer arranque muestra los tres puntos, el segundo no muestra ninguno, y el saldo se queda en $2.980.000 en ambos.
+
+---
+
+## ADR-047 — Qué se verificó para la v2.1, y qué no se pudo verificar aquí
+
+**Hecho sobre el build de producción**, con el blob v1 sembrado en un perfil limpio:
+
+| Verificación | Resultado |
+|---|---|
+| Migración del blob "sano" (3 cuentas, 8 movimientos, 1 historial) | Los 3 saldos idénticos al céntimo, incluida la tarjeta en −$420.000 |
+| Migración del blob con casos borde (4 cuentas, 11 movimientos) | Los 4 saldos idénticos; 4 importes inválidos descartados con aviso nominal; movimiento huérfano conservado en "Sin asignar"; categoría desconocida a `sys_sin_categoria`; movimiento sin `type` como gasto |
+| `gastos_app_data_v1` tras migrar | Intacto, y respaldo previo creado |
+| Self-XSS de la auditoría §16 | `<img src=x onerror=alert(1)>` se pinta como texto: ni nodo `<img>`, ni `alert` |
+| Ajuste de saldo | Saldo $425.000 → $525.000 mientras Ingresos y Gastos siguen en $0 (ADR-004) |
+| Alta / recarga / edición / borrado | 7 → 8 movimientos, persiste tras recargar conservando la ruta, y 8 → 7 al borrar |
+| Separador de miles en vivo | `123456` → `123.456` |
+| Offline | Con el servidor **apagado** y `fetch` fallando, la app carga del service worker y navega entera |
+| Respaldo | `appVersion: "2.1.0"`, 5 cuentas, 8 movimientos, marca de exportación registrada |
+| Presupuesto de bundle | 95,40 kB gz de 100. Recharts (95,47 kB) sigue fuera de la carga inicial, en su chunk diferido |
+
+**Lo que NO se pudo hacer desde aquí, dicho sin adornos:**
+
+- **La migración con el blob v1 REAL del usuario.** Los fixtures son sintéticos: nunca se capturó un dump del dispositivo, y no debe capturarse sin anonimizar. Los saldos reales sólo se pueden confirmar en el teléfono del usuario, y ése es el criterio de aceptación final de la Fase 20.
+- **Lighthouse.** Necesita un Chrome controlable desde fuera. En su lugar se auditaron a mano las 8 pantallas en los 2 temas: contraste, nombres accesibles, etiquetas, `id` duplicados, `aria-labelledby`, `tabindex` y orden de encabezados (Fase 18, ítems 44-47).
+- **Instalación como PWA y APK sin barra de direcciones.** Requieren HTTPS y el TWA firmado.
+- **El APK.** Debe regenerarse con el **keystore original**. Con uno nuevo, la actualización sobre el APK instalado falla y obliga a desinstalar, lo que borra el `localStorage` del WebView — es decir, los datos financieros del usuario. Ese paso lo hace el usuario, igual que el `git push`.
+
+---
+
 ## Decisiones pendientes (se resolverán en su fase)
 
 | Tema | Fase | Nota |

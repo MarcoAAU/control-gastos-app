@@ -13,9 +13,9 @@ Estos archivos son **datos de prueba** para los tests de `storage/migrations/leg
 |---|---|---|
 | Transacción sin campo `type` | Los movimientos creados antes del commit `076300b` no tenían tipo | Se asume `'expense'` (replica `app.js:159`) |
 | Transacción con `accountId` inexistente | v1 no tenía integridad referencial: borrar una cuenta dejaba sus movimientos huérfanos | Se conserva el movimiento, reasignado a una cuenta "Sin asignar" creada al vuelo. **Nunca se pierde un movimiento del usuario** |
-| Transacción con `categoryId` desconocida | Categoría escrita a mano o de una versión anterior | Se reasigna a `sys_otros` |
+| Transacción con `categoryId` desconocida | Categoría escrita a mano o de una versión anterior | Se reasigna a `sys_sin_categoria`, **no** a la categoría "Otros" del usuario: volcar huérfanos en una categoría real ensuciaría sus reportes sin dejar rastro (ver `constants/systemIds.ts`) |
 | Transacción con `amount` inválido (`0`, negativo, `null`, texto) | Datos corruptos por un bug o edición manual | Se descarta ESE registro y se anota en `migrationWarnings`. **No aborta el lote completo** |
-| Cuenta con `bankId: "manual"` | Cuentas creadas con la opción "Otro" | Se mapea al banco "Sin banco" |
+| Cuenta con `bankId: "manual"` | Cuentas creadas con la opción "Otro" | Si `bankName` trae un nombre real ("Scotiabank Colpatria"), se crea ese banco y se conserva; si es el literal "Manual", cae en "Sin banco". El nombre que el usuario escribió no se pierde |
 | Cuenta sin ningún movimiento | Cuenta recién creada | `initialBalance = balance` (no hay movimientos que descontar) |
 | Cuenta con saldo negativo | Tarjetas de crédito | Se preserva el signo |
 | Historial sin campos `income`/`expense`/`balance` | Snapshots guardados antes del commit `66c59af` | Se marca `origin: 'legacy'` y se usa el fallback documentado |

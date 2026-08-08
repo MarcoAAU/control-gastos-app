@@ -15,7 +15,7 @@ import { selectPersisted } from '@/store/types';
 import { formatDateShort } from '@/utils/date';
 import styles from './SettingsScreen.module.css';
 
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.1.0';
 
 type SheetState =
   | { kind: 'closed' }

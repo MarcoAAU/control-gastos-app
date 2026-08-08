@@ -1,7 +1,31 @@
 # Análisis Técnico Completo — "Mis Gastos"
 
+> ## ⚠️ ESTE DOCUMENTO DESCRIBE LA VERSIÓN 1. YA NO DESCRIBE LA APP ACTUAL.
+>
+> Se conserva porque es **la razón por la que se hizo la reescritura** y porque
+> sus hallazgos son la lista de lo que había que arreglar. Pero a partir de la
+> versión 2.1 casi nada de lo que hay aquí sigue siendo cierto sobre el código.
+>
+> | Lo que dice este documento (v1) | Lo que hay hoy (v2.1) |
+> |---|---|
+> | PWA vanilla, un `app.js` de 939 líneas, sin capas | React + Vite + TypeScript por capas (`models/`, `storage/`, `store/`, `services/`, `components/`, `screens/`) |
+> | Sin build, sin tests | Vite, ESLint, `tsc` estricto y 423 tests |
+> | Estado global mutable | Store único (Zustand) con una sola capa de escritura |
+> | `localStorage` accedido desde toda la vista | Una única puerta (`AppDataRepository`), verificada por regla de ESLint |
+> | Escapado de HTML inconsistente (self-XSS, §16) | Desaparece por construcción: React escapa el texto |
+> | "Ingresos" mostraba en realidad el saldo total (`app.js:221`) | **Saldo total** (stock) e **Ingresos del periodo** (flujo) separados y probados |
+> | Calificación global 4.9/10 | — |
+>
+> **Para entender la app de hoy**, leer en su lugar `docs/DECISIONES-TECNICAS.md`
+> (45 decisiones con su porqué) y `docs/CHECKLIST-REGRESION.md`.
+>
+> Las referencias a `app.js:NNN` que aparecen aquí y en los comentarios del
+> código nuevo siguen siendo válidas: apuntan al código de v1, recuperable en
+> el tag `v1-vanilla`.
+
 > Documento generado en modo **solo lectura**. Ningún archivo del proyecto fue modificado para producir este análisis.
 > Fecha del análisis: 2026-08-05 · Commit analizado: `5dc7494` (rama `main`)
+> **Aplica a: v1 (PWA vanilla).** Marcado como histórico el 2026-08-08, al cerrar la v2.1.
 
 ## Aviso metodológico importante
 

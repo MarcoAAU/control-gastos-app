@@ -41,6 +41,33 @@ export async function bootstrapApp(): Promise<Bootstrap> {
       status: 'ready',
     });
 
+    /**
+     * ── EL AVISO QUE CIERRA EL CÍRCULO DE TODA LA REESCRITURA ─────────────
+     * `migratedNow` sólo es `true` en el arranque en que la conversión v1 → v2
+     * ocurre de verdad. A partir del siguiente, `gastos_app_data_v2` ya existe
+     * y no se migra nada, así que esto se muestra EXACTAMENTE UNA VEZ sin
+     * necesidad de guardar ninguna marca de "ya lo vio".
+     *
+     * ⚠️ No es un detalle de cortesía. Al actualizar, la cifra rotulada
+     * "Ingresos" en el Inicio **cambia de valor**, porque en v1 mostraba por
+     * error el saldo total de las cuentas (`app.js:221`) y ahora muestra lo
+     * que realmente entró en el periodo. Sin este aviso, el usuario abre la app
+     * y ve un número distinto del que recordaba, en una app de finanzas, sin
+     * ninguna explicación: indistinguible de que la actualización le rompió
+     * los datos. Es justo la confusión que originó la reescritura, reaparecida
+     * en el peor momento.
+     *
+     * Va PRIMERO en la lista: los otros avisos son incidencias de registros
+     * sueltos; éste explica por qué la pantalla entera se ve distinta.
+     */
+    if (result.migratedNow) {
+      warnings.push(
+        'Tus saldos NO han cambiado: son exactamente los mismos que veías antes.',
+        'La cifra de «Ingresos» del Inicio sí cambia. Antes mostraba, por error, el saldo total de tus cuentas; ahora muestra lo que de verdad entró durante el periodo.',
+        'Tus datos anteriores siguen guardados intactos. Aun así, descarga un respaldo desde Ajustes.',
+      );
+    }
+
     warnings.push(...result.warnings);
 
     if (!repository.isPersistent) {

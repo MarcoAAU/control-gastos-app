@@ -160,3 +160,36 @@ Medido sobre el build de producción, en las 8 pantallas y en los 2 temas.
 | 64 | El proveedor activo nunca devuelve `'locked'` (fijado por tests) | ✅ | |
 
 **Nota 8 — lo que la Fase 19 NO hace, y hay que decirlo al usuario.** No existe PIN, ni biometría, ni bloqueo por inactividad, ni cifrado. Sólo hay una interfaz, una implementación vacía y el sitio donde enchufarla. Y cuando se implemente, el texto de la interfaz **no podrá prometer que los datos están protegidos**: viven en `localStorage` en claro, así que un PIN disuade a quien coge el teléfono un momento pero no protege frente a nadie con acceso real al dispositivo. La única protección real contra la pérdida de datos sigue siendo el respaldo exportable de Ajustes.
+
+## Verificación final v2.1 (Fase 20)
+
+Ejecutado sobre el **build de producción**, con el blob v1 sembrado en un perfil de navegador limpio.
+
+| # | Comprobación | Resultado |
+|---|---|---|
+| 65 | Blob v1 "sano": los 3 saldos idénticos tras migrar (incl. tarjeta en −$420.000) | ✅ |
+| 66 | Blob de casos borde: los 4 saldos idénticos (incl. tarjeta en −$1.250.000) | ✅ |
+| 67 | 4 importes inválidos descartados, cada uno con su aviso nominal | ✅ |
+| 68 | Movimiento huérfano conservado y movido a "Sin asignar" | ✅ |
+| 69 | Categoría desconocida → `sys_sin_categoria`, no a la "Otros" del usuario | ✅ |
+| 70 | Movimiento sin `type` migrado como gasto | ✅ |
+| 71 | Nombre de banco escrito a mano ("Scotiabank Colpatria") conservado | ✅ |
+| 72 | `gastos_app_data_v1` intacto y respaldo previo creado | ✅ |
+| 73 | Aviso post-migración: sale en el primer arranque, no en el segundo | ✅ |
+| 74 | Self-XSS de la auditoría §16: el payload se pinta como texto | ✅ |
+| 75 | Ajuste de saldo mueve el saldo y NO toca Ingresos ni Gastos | ✅ |
+| 76 | Alta → recarga → edición → borrado, con la ruta conservada | ✅ |
+| 77 | Separador de miles en vivo (`123456` → `123.456`) | ✅ |
+| 78 | Offline con el servidor apagado: carga y navega entera | ✅ |
+| 79 | Respaldo exportado con `appVersion: 2.1.0` y marca registrada | ✅ |
+| 80 | Presupuesto de bundle: 95,40 kB gz de 100; Recharts fuera de la carga inicial | ✅ |
+
+### Pendiente, y sólo lo puede hacer el usuario
+
+| # | Comprobación | Por qué no se puede desde aquí |
+|---|---|---|
+| 37 | Instalable como PWA | Requiere HTTPS |
+| 38 | APK (TWA) sin barra de direcciones | Requiere el TWA firmado y `assetlinks.json` |
+| 81 | **Migración con el blob v1 REAL** | Los fixtures son sintéticos; nunca se capturó un dump del dispositivo, y no debe capturarse sin anonimizar. Los saldos reales sólo se confirman en el teléfono |
+| 82 | **APK regenerado con el keystore ORIGINAL** | ⚠️ Con un keystore nuevo la actualización falla y obliga a desinstalar, lo que borra el `localStorage` del WebView: los datos financieros |
+| 83 | Lighthouse en producción | Necesita un Chrome controlable desde fuera. Sustituido por la auditoría manual de los ítems 44-47 |
