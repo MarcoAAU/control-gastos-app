@@ -6,7 +6,7 @@ import { AppDataRepository } from './AppDataRepository';
 import { createMemoryAdapter } from './adapters/memoryAdapter';
 import { StorageError, type StorageAdapter } from './StorageAdapter';
 import { detectVersion } from './migrations/detectVersion';
-import { runMigrations } from './migrations';
+import { createEmptyAppData, runMigrations } from './migrations';
 
 const legacyRaw = readFileSync(
   fileURLToPath(new URL('../../docs/fixtures/legacy-sample.json', import.meta.url)),
@@ -222,5 +222,60 @@ describe('AppDataRepository — almacenamiento no disponible', () => {
     expect(repo.isPersistent).toBe(false);
     const result = await repo.load();
     expect(result.status).toBe('empty');
+  });
+});
+
+/**
+ * Reparación del catálogo en la carga.
+ *
+ * El fallo original vaciaba categorías y bancos al "borrar todos los datos".
+ * Corregir el borrado protege de aquí en adelante, pero no rescata a quien ya
+ * tiene el documento dañado en su teléfono: los documentos de la versión
+ * actual se devolvían tal cual, así que ese estado era permanente.
+ */
+describe('reparación del catálogo al cargar', () => {
+  it('repone las categorías y bancos que faltan y LO GUARDA', async () => {
+    const adapter = createMemoryAdapter();
+    const roto = { ...createEmptyAppData(), categories: [], banks: [], subcategories: [] };
+    await adapter.setItem(STORAGE_KEY, JSON.stringify(roto));
+
+    const repo = new AppDataRepository(adapter);
+    const result = await repo.load();
+
+    expect(result.data.categories.length).toBeGreaterThan(0);
+    expect(result.data.banks.length).toBeGreaterThan(0);
+    expect(result.warnings.join(' ')).toMatch(/Faltaban/);
+
+    // Lo importante: quedó ESCRITO. Si sólo se reparase en memoria, el aviso
+    // saldría en cada arranque y un respaldo exportado seguiría sin catálogo.
+    const guardado = JSON.parse((await adapter.getItem(STORAGE_KEY))!) as typeof roto;
+    expect(guardado.categories.length).toBe(result.data.categories.length);
+  });
+
+  it('la segunda carga ya no repara ni avisa', async () => {
+    const adapter = createMemoryAdapter();
+    const roto = { ...createEmptyAppData(), categories: [], banks: [], subcategories: [] };
+    await adapter.setItem(STORAGE_KEY, JSON.stringify(roto));
+
+    const repo = new AppDataRepository(adapter);
+    const primera = await repo.load();
+    const segunda = await repo.load();
+
+    expect(segunda.warnings).toEqual([]);
+    expect(segunda.data.categories).toHaveLength(primera.data.categories.length);
+    const ids = segunda.data.categories.map((c) => c.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('un documento sano no se toca ni se reescribe', async () => {
+    const adapter = createMemoryAdapter();
+    const sano = createEmptyAppData();
+    const original = JSON.stringify(sano);
+    await adapter.setItem(STORAGE_KEY, original);
+
+    const result = await new AppDataRepository(adapter).load();
+
+    expect(result.warnings).toEqual([]);
+    expect(await adapter.getItem(STORAGE_KEY)).toBe(original);
   });
 });

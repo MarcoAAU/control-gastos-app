@@ -1,7 +1,9 @@
 import type { Transaction } from '@/models';
 import type { CategorySlice } from '@/services/metrics/categoryBreakdown';
 import type { FlowTotals } from '@/services/metrics/periodTotals';
+import { useId } from 'react';
 import { Card, Icon } from '@/components/ui';
+import { useAppStore } from '@/store';
 import { formatMoney } from '@/utils/money';
 import { cn } from '@/utils/cn';
 import styles from './IndicatorGrid.module.css';
@@ -49,11 +51,75 @@ export function IndicatorGrid({
   savingsRate,
   periodPhrase,
 }: IndicatorGridProps) {
-  return (
-    <section className={styles.section} aria-label={`Indicadores de ${periodPhrase}`}>
-      <h2 className={styles.heading}>Indicadores de {periodPhrase}</h2>
+  /**
+   * La preferencia vive en `settings`, o sea en el documento persistido: al
+   * cerrar y reabrir la app, los indicadores siguen como se dejaron.
+   *
+   * NO va en `uiSlice`, que es donde vive el resto del estado de interfaz,
+   * porque `uiSlice` se excluye de lo que se guarda a propósito (ADR-002). Esa
+   * exclusión es correcta para un filtro a medio poner —reabrir con un filtro
+   * invisible se lee como "perdí mis movimientos"— pero no para esto: plegar
+   * una sección es una decisión duradera, y volver a plegarla en cada arranque
+   * sería el mismo tipo de olvido que molesta.
+   *
+   * `?? true` porque en cualquier instalación anterior a esta preferencia el
+   * campo llega como `undefined`.
+   */
+  const visible = useAppStore((state) => state.settings.showTodayIndicators ?? true);
+  const setVisible = useAppStore((state) => state.setShowTodayIndicators);
 
-      <div className={styles.grid}>
+  const titleId = useId();
+
+  return (
+    <section className={styles.section} aria-labelledby={titleId}>
+      {/*
+        Es un `<button>` de verdad envolviendo al encabezado, no un `<div>` con
+        onClick: así funciona con teclado y con lector de pantalla sin escribir
+        nada más. El `<h2>` sigue dentro para que el índice de encabezados de la
+        página no cambie.
+      */}
+      <button
+        type="button"
+        className={styles.toggle}
+        aria-expanded={visible}
+        aria-controls={`${titleId}-panel`}
+        onClick={() => setVisible(!visible)}
+      >
+        <h2 id={titleId} className={styles.heading}>
+          Indicadores de {periodPhrase}
+        </h2>
+        <Icon
+          name="chevron-down"
+          size="sm"
+          className={cn(styles.chevron, !visible && styles.chevronCollapsed)}
+        />
+      </button>
+
+      {/*
+        El panel NO se desmonta al plegarse: se colapsa a altura cero. Los datos
+        siguen ahí —el usuario pidió ocultarlos, no borrarlos— y así la
+        transición puede animarse en los dos sentidos. Con un desmontaje, al
+        desplegar el contenido aparecería de golpe.
+
+        `inert` y `aria-hidden` lo sacan del recorrido del teclado y del lector
+        de pantalla mientras está plegado: si no, Tab se pararía en cinco
+        tarjetas invisibles.
+      */}
+      <div
+        id={`${titleId}-panel`}
+        className={cn(styles.panel, !visible && styles.panelCollapsed)}
+        aria-hidden={!visible}
+        inert={!visible}
+      >
+        {/*
+          Este envoltorio existe para que NO quede un hueco al plegar. La
+          separación con la cabecera es el `padding-top` de `.grid`, y el
+          relleno de un elemento no se colapsa aunque su altura sea cero: si
+          `.grid` fuese el hijo directo, plegado seguiría midiendo 12 px.
+          Metiéndolo un nivel más adentro, el recorte se lo lleva por delante.
+        */}
+        <div className={styles.clip}>
+          <div className={styles.grid}>
         <Indicator
           icon="calendar"
           label="Gasto medio al día"
@@ -98,8 +164,10 @@ export function IndicatorGrid({
           icon="nav-transactions"
           label="Movimientos"
           value={String(totals.count)}
-          hint={totals.count === 0 ? 'Nada registrado' : 'Sin contar ajustes'}
-        />
+            hint={totals.count === 0 ? 'Nada registrado' : 'Sin contar ajustes'}
+          />
+          </div>
+        </div>
       </div>
     </section>
   );

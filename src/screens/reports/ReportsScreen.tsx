@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { TransactionFilters } from '@/models';
 import { PERIODS, PERIOD_PHRASES, type Period } from '@/constants';
 import { Button, Card, Icon } from '@/components/ui';
-import { ScreenContainer, TopBar } from '@/components/layout';
+import { ScreenActions, ScreenContainer, TopBar } from '@/components/layout';
 import { CategoryRanking } from '@/components/common/CategoryRanking';
 import { PeriodTabs } from '@/components/common/PeriodTabs';
 import { FilterBar, FilterSheet } from '@/components/filters';
@@ -157,7 +157,7 @@ export default function ReportsScreen() {
 
   return (
     <>
-      <TopBar title="Reportes" icon="nav-reports" />
+      <TopBar title="Reportes" icon="nav-reports" actions={<ScreenActions />} />
 
       <ScreenContainer>
         <PeriodTabs value={period} onChange={setPeriod} periods={PERIODS} />

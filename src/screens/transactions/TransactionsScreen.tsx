@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { ActiveFilterChip } from '@/services/filters/describeFilters';
 import type { Transaction } from '@/models';
-import { ScreenContainer, TopBar, Fab } from '@/components/layout';
+import { Fab, ScreenActions, ScreenContainer, TopBar } from '@/components/layout';
 import { Button, Card, EmptyState, Icon, Sheet } from '@/components/ui';
 import { FilterBar, FilterSheet } from '@/components/filters';
 import { TransactionForm } from '@/components/transactions/TransactionForm';
@@ -203,7 +203,7 @@ export default function TransactionsScreen() {
 
   return (
     <>
-      <TopBar title="Movimientos" icon="nav-transactions" />
+      <TopBar title="Movimientos" icon="nav-transactions" actions={<ScreenActions />} />
 
       <ScreenContainer>
         {transactions.length > 0 && (

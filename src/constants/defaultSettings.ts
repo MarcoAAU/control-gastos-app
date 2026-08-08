@@ -15,6 +15,9 @@ export function createDefaultSettings(): AppSettings {
     // cambiárselo solo al actualizar sería una sorpresa. El selector llega en
     // la Fase 18.
     theme: 'dark',
+    // Desplegados de entrada: es como se ha visto siempre el Inicio, y plegar
+    // algo por defecto esconde información que el usuario no ha pedido esconder.
+    showTodayIndicators: true,
     weekStartsOn: WEEK_STARTS_ON,
     currency: CURRENCY,
     locale: LOCALE,

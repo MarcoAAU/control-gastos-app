@@ -11,11 +11,70 @@
  * parecía un anexo. La cejilla es un recurso válido, pero para un rótulo
  * DENTRO de un bloque, no para el rótulo del bloque.
  */
+/* La cabecera entera es el control: un objetivo de fila completa se acierta a
+   la primera con el pulgar, a diferencia de un chevron de 16 px. */
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--layout-touch-target);
+  color: inherit;
+  text-align: left;
+  /* Sin margen inferior: la separación con las tarjetas va DENTRO del panel
+     (ver `.grid`), para que al plegarse desaparezca con él. Con el margen
+     aquí quedaría un hueco flotando bajo un encabezado plegado. */
+}
+
 .heading {
   font-size: var(--font-size-title);
   font-weight: var(--font-weight-bold);
   color: var(--color-on-surface);
-  margin-bottom: var(--space-3);
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--color-on-surface-variant);
+  transition: transform var(--motion-duration-short) var(--motion-easing-standard);
+}
+
+/* Apunta hacia la derecha cuando está plegado: la dirección del chevron es la
+   única pista permanente de si hay algo escondido ahí debajo. */
+.chevronCollapsed {
+  transform: rotate(-90deg);
+}
+
+/**
+ * Plegado con `grid-template-rows: 1fr → 0fr`.
+ *
+ * ── POR QUÉ NO `max-height` ───────────────────────────────────────────────
+ * La receta habitual es animar `max-height` de 0 a un número inventado lo
+ * bastante grande. Tiene dos fallos conocidos: si el contenido crece más que
+ * ese número queda recortado, y si es mucho menor la animación pasa la mayor
+ * parte del tiempo recorriendo espacio vacío, lo que se ve como un retardo.
+ *
+ * Con la fila de rejilla en `fr`, el navegador anima hasta la altura REAL del
+ * contenido, sea cual sea. Sin números mágicos y sin medir nada en JavaScript.
+ *
+ * `min-height: 0` en el hijo es obligatorio: sin él, el contenido impone su
+ * altura mínima y la fila nunca llega a cero.
+ */
+.panel {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows var(--motion-duration-medium) var(--motion-easing-standard);
+}
+
+/* El elemento que se recorta. Su único cometido es tener altura cero cuando la
+   fila vale 0fr y llevarse por delante lo que haya dentro, RELLENO INCLUIDO. */
+.clip {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.panelCollapsed {
+  grid-template-rows: 0fr;
 }
 
 /**
@@ -29,6 +88,9 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-2);
+  /* Separación con la cabecera. Va aquí y no en `.toggle` para que se pliegue
+     junto con el contenido. */
+  padding-top: var(--space-3);
 }
 
 .grid > :last-child {

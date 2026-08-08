@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { buildPath, PALETTE, ROUTES, SYSTEM_BANK_NONE, SYSTEM_IDS } from '@/constants';
 import type { Bank } from '@/models';
-import { Fab, ScreenContainer, TopBar } from '@/components/layout';
+import { Fab, ScreenActions, ScreenContainer, TopBar } from '@/components/layout';
 import { Button, Card, EmptyState, Icon, Sheet, TextField } from '@/components/ui';
 import { AccountCard } from '@/components/accounts/AccountCard';
 import { AccountForm, type AccountFormValues } from '@/components/accounts/AccountForm';
@@ -117,7 +117,7 @@ export default function AccountsScreen() {
 
   return (
     <>
-      <TopBar title="Cuentas" icon="nav-accounts" />
+      <TopBar title="Cuentas" icon="nav-accounts" actions={<ScreenActions />} />
 
       <ScreenContainer>
         {accounts.length > 0 && (

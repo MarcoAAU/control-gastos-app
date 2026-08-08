@@ -1,6 +1,7 @@
 import { Suspense, useEffect, type ReactNode } from 'react';
 import { useLocation, useNavigationType } from 'react-router-dom';
 import { Skeleton, ToastHost } from '@/components/ui';
+import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import { cn } from '@/utils/cn';
 import { BottomNav } from './BottomNav';
 import { StartupBanner } from './StartupBanner';
@@ -67,20 +68,43 @@ export function RouteFallback() {
  * estaba, no el principio.
  */
 export function ScreenContainer({ children }: { children: ReactNode }) {
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { pathname } = location;
   const navigationType = useNavigationType();
+  const swipe = useSwipeNavigation();
 
   useEffect(() => {
     if (navigationType === 'POP') return;
     window.scrollTo(0, 0);
   }, [pathname, navigationType]);
 
+  /**
+   * La entrada se anima según de dónde viene.
+   *
+   * La dirección viaja en el estado de la navegación, no en una variable de
+   * módulo: así el botón Atrás y el historial la conservan, y no hay estado
+   * global que pueda quedarse desfasado si dos navegaciones se pisan.
+   *
+   * Sin esto, deslizar hacia la izquierda haría entrar la pantalla desde
+   * ABAJO —la animación por defecto—, que contradice al dedo. Al tocar la
+   * barra inferior no hay dirección y se mantiene la entrada vertical, que es
+   * lo que corresponde a un salto sin lateralidad.
+   */
+  const direction = (location.state as { swipe?: number } | null)?.swipe;
+
   return (
     // `key` reinicia la animación de entrada al cambiar de ruta. Hace falta
     // porque dos rutas pueden compartir componente (historial y su detalle):
     // sin remontar, React reutilizaría el nodo y la animación no volvería a
     // dispararse.
-    <main key={pathname} className={cn(styles.main, styles.enter)}>
+    <main
+      key={pathname}
+      className={cn(
+        styles.main,
+        direction === 1 ? styles.enterFromRight : direction === -1 ? styles.enterFromLeft : styles.enter,
+      )}
+      {...swipe}
+    >
       <StartupBanner />
       {children}
     </main>

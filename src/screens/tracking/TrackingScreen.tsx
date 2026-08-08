@@ -6,7 +6,7 @@ import {
   type Period,
 } from '@/constants';
 import { Card, EmptyState, Skeleton } from '@/components/ui';
-import { ScreenContainer, TopBar } from '@/components/layout';
+import { ScreenActions, ScreenContainer, TopBar } from '@/components/layout';
 import { CategoryRanking } from '@/components/common/CategoryRanking';
 import { PeriodTabs } from '@/components/common/PeriodTabs';
 import { TransactionList } from '@/components/transactions/TransactionList';
@@ -98,7 +98,7 @@ export default function TrackingScreen() {
 
   return (
     <>
-      <TopBar title="Seguimiento" icon="nav-tracking" />
+      <TopBar title="Seguimiento" icon="nav-tracking" actions={<ScreenActions />} />
 
       <ScreenContainer>
         <PeriodTabs value={period} onChange={setPeriod} periods={PERIODS} />

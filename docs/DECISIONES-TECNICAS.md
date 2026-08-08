@@ -710,6 +710,76 @@ Verificado de extremo a extremo en un perfil limpio: primer arranque muestra los
 
 ---
 
+## ADR-048 — Los catálogos de fábrica se reponen; y la reparación va también en la carga
+
+**El fallo.** "Borrar todos los datos" vaciaba también categorías y bancos: de 15 y 4 a cero. Reproducido antes de tocar nada. Es peor de lo que parece: sin bancos **no se puede crear una cuenta**, así que el usuario pulsaba "borrar mis datos" y se quedaba con una app inservible. Y se llevaba por delante las categorías de sistema (`sys_ajuste`, `sys_sin_categoria`), de las que depende el ajuste de saldo — una referencia rota esperando a que alguien cuadre una cuenta.
+
+**Decisión.** `services/catalog/ensureSeedCatalog` **completa por `id`**, nunca reemplaza. Se usa en tres sitios: al borrar los datos, al importar un respaldo y **al cargar**.
+
+**Por qué también en la carga, que es la parte no evidente.** Corregir el borrado protege de aquí en adelante, pero no rescata a quien ya pulsó el botón con la versión anterior: su documento guardado tiene el catálogo vacío y, como los documentos de la versión actual se devolvían tal cual sin normalizar, ese estado era **permanente**. Poniéndolo en la carga, la app se repara sola al abrirse.
+
+**Y el documento reparado hay que ESCRIBIRLO.** Al verificarlo en el navegador apareció un segundo problema: la reparación ocurría en memoria pero no llegaba al disco, porque el suscriptor de persistencia toma como línea base el estado que le deja el arranque —ya reparado— y no ve ningún cambio. Consecuencias: el aviso saldría en **cada** arranque, y cualquier respaldo exportado seguiría saliendo sin catálogo, que es justo el archivo del que uno se fía cuando algo va mal. Por eso `runMigrations` devuelve `healed` y el repositorio escribe.
+
+**Por qué completar por `id` y no "si faltan, ponerlas todas".** Reemplazar borraría el color que el usuario le puso a Comida o el nombre que le cambió a Transporte. Y comparar por `id` —contrato fijo— es lo que hace imposible el fallo clásico de sembrar al arrancar: Comida, Comida, Comida… Un test ejecuta la función diez veces seguidas sobre su propio resultado.
+
+**Lo archivado no resucita.** Un elemento archivado conserva su `id`, así que se ve y se respeta. Archivar una categoría que no usas es una decisión deliberada; verla reaparecer en cada arranque sería un fallo peor que el corregido.
+
+---
+
+## ADR-049 — La fila de movimientos: `display: inline` era la causa, no el ancho
+
+**El fallo reportado.** En "Movimientos recientes", el nombre y el detalle se superponían.
+
+**La causa, medida en el navegador.** `.description` y `.meta` son dos `<span>` dentro de `.info`, que era un bloque **sin dirección declarada**. Ambos computaban `display: inline` y caían **en la misma línea**: el nombre acababa en x=451 y el detalle empezaba en x=450.
+
+Y encadenado, un segundo efecto: `overflow: hidden` **no se aplica a cajas inline**, así que el `text-overflow: ellipsis` que ya estaba escrito no llegaba a actuar nunca. No estaba mal escrito; es que no podía funcionar sobre un `display: inline`.
+
+**La corrección.** `.info` pasa a `display: flex; flex-direction: column`. Los hijos de un contenedor flex se blockifican, así que se apilan y el recorte empieza a funcionar. No hizo falta tocar tamaños de letra — el enunciado pedía explícitamente no resolverlo encogiendo la fuente, y no hacía ninguna falta.
+
+**Verificado con los nombres largos del propio encargo**, a 375 px: textos de 281–319 px en 176–196 px de espacio, los cuatro recortados con puntos suspensivos, ninguno invadiendo el importe, todas las filas de la misma altura y sin desbordamiento horizontal de la página.
+
+---
+
+## ADR-050 — Refrescar es releer el disco, no recargar la página
+
+**Qué había.** Un `RefreshButton` escrito dentro de `DashboardScreen`, sólo en el Inicio, que borraba **todas** las cachés y hacía `location.reload()`. Eso fuerza una versión nueva de la app; no refresca datos. Tarda, saca al usuario de la pantalla en la que estaba y, sin conexión, deja la app sin sus archivos precacheados.
+
+**Qué hay ahora.** `store/refresh.ts`: vaciar la escritura pendiente → releer del repositorio → rehidratar. Instantáneo y sin mover al usuario de sitio.
+
+**⚠️ El orden no es negociable.** La escritura va con 300 ms de rebote. Si el usuario anota un gasto y toca refrescar antes de que venza, releer el disco traería el estado anterior y **el movimiento recién escrito desaparecería de la pantalla y del disco**. Un botón de refrescar que borra el último apunte es mucho peor que no tener botón. Se comprobó explícitamente: en el momento de refrescar el disco tenía 11 movimientos, tras refrescar tenía 12 y el nuevo seguía ahí.
+
+**Dónde vive.** Las pantallas no pueden importar `storage/**` (ADR-008). El arranque deposita el repositorio y el manejador de persistencia en un registro del store, y la interfaz llama a `refreshFromStorage()` sin saber que existe un repositorio.
+
+**Nota para el usuario.** El comportamiento anterior —borrar cachés y recargar— ya no está en ese botón. La actualización a una versión nueva la sigue haciendo sola el Service Worker (`cleanupOutdatedCaches` + `skipWaiting`) al reabrir la app.
+
+---
+
+## ADR-051 — Deslizar entre pestañas SIN tocar el scroll
+
+**Decisión.** `useSwipeNavigation` es **pasivo**: no llama a `preventDefault()`, no llama a `setPointerCapture()` y no toca `touch-action`. Sólo apunta dónde empezó el dedo y mira dónde acabó.
+
+**Por qué es la decisión que importa.** Es lo que garantiza que el scroll vertical, las listas y los formularios se comporten exactamente igual que antes: el navegador nunca se entera de que esto existe. Un swipe que captura el puntero "para poder animar el arrastre" es justo el que acaba comiéndose el scroll de una lista larga. El precio es que no hay arrastre en vivo, sólo el resultado al soltar; se paga con gusto, porque el scroll se usa cien veces más.
+
+**Cuándo navega.** Recorrido horizontal ≥ 60 px, `|dx| > 2·|dy|` (a menos de ~27° de la horizontal), menos de 700 ms y el mismo puntero. No empieza sobre controles, ni dentro de algo que ya se desplaza en horizontal, ni con una hoja abierta. No da la vuelta en los extremos, y en las pantallas que no son pestañas no hace nada.
+
+**Reutiliza la navegación existente**: llama a `navigate()` con las rutas de `BOTTOM_NAV_ITEMS`. No hay una segunda navegación en paralelo, así que la barra inferior, el historial y el botón Atrás siguen funcionando — verificado: tras deslizar, Atrás vuelve a la pestaña anterior.
+
+**La dirección viaja en el estado de la navegación**, no en una variable de módulo: así el historial la conserva y no hay estado global que pueda quedarse desfasado. Sin ella, deslizar hacia la izquierda haría entrar la pantalla desde abajo, contradiciendo al dedo.
+
+---
+
+## ADR-052 — Los indicadores se pliegan con `grid-template-rows`, y la preferencia va en `settings`
+
+**Por qué no `max-height`.** La receta habitual anima `max-height` hasta un número inventado. Si el contenido crece más, queda recortado; si es mucho menor, la animación pasa la mayor parte del tiempo recorriendo vacío y se percibe como un retardo. Con la fila en `fr`, el navegador anima hasta la altura real, sea cual sea.
+
+**El detalle que sólo aparece midiendo.** Plegado quedaban 12 px de hueco: el `padding-top` que separa la rejilla de la cabecera vivía en el elemento recortado, y el relleno de un elemento no se colapsa aunque su altura sea cero. Se resolvió con un envoltorio intermedio que se lleva el recorte por delante. Medido después: 291 px → **0 px**.
+
+**Por qué la preferencia va en `settings` y no en `uiSlice`.** `uiSlice` se excluye de lo que se persiste a propósito (ADR-002), y para un filtro a medio poner es lo correcto: reabrir con un filtro invisible se lee como "perdí mis movimientos". Pero plegar una sección es una decisión duradera, y volver a desplegarla en cada arranque sería el mismo tipo de olvido que molesta.
+
+**Y es un campo OPCIONAL Y PLANO.** Los documentos v2 ya guardados no pasan por ningún merge de valores por defecto, así que llegará como `undefined` en todas las instalaciones existentes; se lee con `?? true`. Si fuera un objeto anidado, leerlo en un documento antiguo lanzaría — y el fallo aparecería sólo en los dispositivos que ya tienen datos, que es justo donde no se prueba.
+
+---
+
 ## Decisiones pendientes (se resolverán en su fase)
 
 | Tema | Fase | Nota |

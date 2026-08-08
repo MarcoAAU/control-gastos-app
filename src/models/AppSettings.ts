@@ -9,6 +9,22 @@ export type ThemePreference = 'dark' | 'light' | 'system';
  */
 export interface AppSettings {
   theme: ThemePreference;
+
+  /**
+   * ¿Se ven desplegados los indicadores del Inicio?
+   *
+   * ⚠️ OPCIONAL Y PLANO A PROPÓSITO. Los documentos v2 que ya están guardados
+   * en los dispositivos no pasan por ningún merge de valores por defecto
+   * (`runMigrations` devuelve el documento actual tal cual), así que este campo
+   * llegará como `undefined` en todas las instalaciones existentes. Se lee
+   * siempre con `?? true`.
+   *
+   * Si fuera un objeto anidado —`ui: { showIndicators }`— leerlo en un
+   * documento antiguo lanzaría al intentar acceder a una propiedad de
+   * `undefined`, y el fallo aparecería sólo en los dispositivos que ya tenían
+   * datos: justo donde no se prueba.
+   */
+  showTodayIndicators?: boolean;
   /** Día en que empieza la semana. 1 = lunes (convenio es-CO). */
   weekStartsOn: 0 | 1;
   /** Reservado para multimoneda; hoy siempre `'COP'`. */

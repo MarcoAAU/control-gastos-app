@@ -575,3 +575,78 @@ describe('persistencia — un único suscriptor', () => {
     vi.useRealTimers();
   });
 });
+
+/**
+ * ══════════════════════════════════════════════════════════════════════════
+ *  Borrar los datos NO puede dejar la app sin catálogo.
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ * El fallo reportado: "Borrar todos los datos" vaciaba también categorías y
+ * bancos —de 15 y 4 a cero—. Sin categorías no se clasifica un gasto y, sobre
+ * todo, **sin bancos no se puede crear una cuenta**: el usuario pulsaba
+ * "borrar mis datos" y se quedaba con una app inservible.
+ */
+describe('borrado de datos', () => {
+  beforeEach(resetStore);
+
+  it('borra cuentas, movimientos e historial', () => {
+    const accountId = addTestAccount();
+    useAppStore.getState().addTransaction({
+      type: 'expense',
+      amount: 50000,
+      date: '2026-08-01',
+      accountId,
+      categoryId: 'comida',
+    });
+
+    useAppStore.getState().clearAllData();
+
+    const state = useAppStore.getState();
+    expect(state.accounts).toHaveLength(0);
+    expect(state.transactions).toHaveLength(0);
+    expect(state.history).toHaveLength(0);
+  });
+
+  it('CONSERVA las categorías y los bancos de fábrica', () => {
+    const antesCategorias = useAppStore.getState().categories.length;
+    const antesBancos = useAppStore.getState().banks.length;
+    expect(antesCategorias).toBeGreaterThan(0);
+
+    useAppStore.getState().clearAllData();
+
+    const state = useAppStore.getState();
+    expect(state.categories).toHaveLength(antesCategorias);
+    expect(state.banks).toHaveLength(antesBancos);
+  });
+
+  it('conserva las categorías de sistema, de las que depende el ajuste de saldo', () => {
+    useAppStore.getState().clearAllData();
+    const ids = useAppStore.getState().categories.map((c) => c.id);
+    expect(ids).toContain(SYSTEM_CATEGORY_ADJUSTMENT);
+    expect(ids).toContain(SYSTEM_CATEGORY_UNCATEGORIZED);
+  });
+
+  it('deja la app en condiciones de crear una cuenta otra vez', () => {
+    useAppStore.getState().clearAllData();
+    expect(useAppStore.getState().banks.length).toBeGreaterThan(0);
+
+    const id = addTestAccount(250000);
+    expect(useAppStore.getState().accounts.find((a) => a.id === id)).toBeDefined();
+  });
+
+  it('no duplica nada al borrar dos veces seguidas', () => {
+    useAppStore.getState().clearAllData();
+    const despuesDeUna = useAppStore.getState().categories.length;
+    useAppStore.getState().clearAllData();
+
+    const ids = useAppStore.getState().categories.map((c) => c.id);
+    expect(ids).toHaveLength(despuesDeUna);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('las preferencias sobreviven: borrar datos no es reconfigurar la app', () => {
+    useAppStore.getState().setTheme('light');
+    useAppStore.getState().clearAllData();
+    expect(useAppStore.getState().settings.theme).toBe('light');
+  });
+});

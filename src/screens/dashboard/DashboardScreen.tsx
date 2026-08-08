@@ -7,8 +7,8 @@ import {
   ROUTES,
   type Period,
 } from '@/constants';
-import { Card, Icon, IconButton, Skeleton } from '@/components/ui';
-import { Fab, ScreenContainer, TopBar } from '@/components/layout';
+import { Card, Icon, Skeleton } from '@/components/ui';
+import { Fab, ScreenActions, ScreenContainer, TopBar } from '@/components/layout';
 import { PeriodTabs } from '@/components/common/PeriodTabs';
 import { accountDistribution } from '@/services/balance/accountDistribution';
 import { buildBalanceTimeline } from '@/services/balance/buildBalanceTimeline';
@@ -161,19 +161,7 @@ export default function DashboardScreen() {
 
   return (
     <>
-      <TopBar
-        title="Mis Gastos"
-        actions={
-          <>
-            <RefreshButton />
-            <IconButton
-              icon="nav-settings"
-              label="Ajustes"
-              onClick={() => navigate(ROUTES.settings)}
-            />
-          </>
-        }
-      />
+      <TopBar title="Mis Gastos" actions={<ScreenActions />} />
 
       <ScreenContainer>
         {isEmpty ? (
@@ -267,18 +255,4 @@ export default function DashboardScreen() {
  * una pantalla en blanco hasta recuperar cobertura. Es la misma precaución que
  * ya tenía v1 (`app.js:831`) y merece conservarse tal cual.
  */
-function RefreshButton() {
-  async function handleRefresh(): Promise<void> {
-    if (navigator.onLine && 'caches' in window) {
-      try {
-        const keys = await caches.keys();
-        await Promise.all(keys.map((key) => caches.delete(key)));
-      } catch {
-        // Da igual por qué falló: recargar sigue siendo lo correcto.
-      }
-    }
-    window.location.reload();
-  }
 
-  return <IconButton icon="refresh" label="Recargar" onClick={handleRefresh} />;
-}

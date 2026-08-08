@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Category, ID, Subcategory } from '@/models';
-import { Fab, ScreenContainer, TopBar } from '@/components/layout';
+import { Fab, ScreenActions, ScreenContainer, TopBar } from '@/components/layout';
 import { Button, Card, EmptyState, Icon, Select, Sheet, TextField } from '@/components/ui';
 import { CategoryForm } from '@/components/categories/CategoryForm';
 import { CategoryItem } from '@/components/categories/CategoryItem';
@@ -144,7 +144,7 @@ export default function CategoriesScreen() {
 
   return (
     <>
-      <TopBar title="Categorías" icon="nav-categories" />
+      <TopBar title="Categorías" icon="nav-categories" actions={<ScreenActions />} />
 
       <ScreenContainer>
         {categories.length === 0 ? (

@@ -57,7 +57,33 @@ export class AppDataRepository {
     if (rawV2 !== null) {
       const parsed = safeParse(rawV2);
       const result = runMigrations(parsed.ok ? parsed.value : null);
-      return { data: result.data, status: result.status, warnings: result.warnings, migratedNow: false };
+      const warnings = [...result.warnings];
+
+      /**
+       * Si hubo que reponer catálogo, el documento en memoria ya no coincide
+       * con el del disco y hay que escribirlo.
+       *
+       * Sin esto la app funcionaría igual —la reparación se repite en cada
+       * arranque— pero con dos efectos molestos y permanentes: el aviso
+       * saldría CADA vez que se abre la app, y un respaldo exportado seguiría
+       * saliendo sin categorías, que es precisamente el archivo del que uno se
+       * fía cuando algo va mal.
+       *
+       * No se puede delegar en el suscriptor de persistencia: éste toma como
+       * línea base el estado ya sanado que le deja el arranque, así que para él
+       * no ha cambiado nada.
+       */
+      if (result.healed) {
+        try {
+          await this.save(result.data);
+        } catch {
+          warnings.push(
+            'Se repusieron las categorías que faltaban, pero no se pudieron guardar. Volverán a reponerse al abrir la app.',
+          );
+        }
+      }
+
+      return { data: result.data, status: result.status, warnings, migratedNow: false };
     }
 
     const rawLegacy = await this.adapter.getItem(LEGACY_STORAGE_KEY);

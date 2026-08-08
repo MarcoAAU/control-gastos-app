@@ -1,4 +1,5 @@
 import { createDefaultSettings } from '@/constants';
+import { ensureSeedCatalog } from '@/services/catalog/ensureSeedCatalog';
 import { CURRENT_SCHEMA_VERSION, type AppData, type AppSettings, type ThemePreference } from '@/models';
 import type { SliceCreator } from '../types';
 
@@ -17,6 +18,8 @@ export interface SettingsSlice {
 
   updateSettings(patch: Partial<AppSettings>): void;
   setTheme(theme: ThemePreference): void;
+  /** Despliega o pliega los indicadores del Inicio. Se recuerda entre sesiones. */
+  setShowTodayIndicators(visible: boolean): void;
   /** Marca la fecha de la última exportación, para poder avisar si es vieja. */
   markExported(): void;
   /** Descarta los avisos de migración una vez vistos. */
@@ -67,6 +70,16 @@ export const createSettingsSlice: SliceCreator<SettingsSlice> = (set) => ({
     );
   },
 
+  setShowTodayIndicators(visible) {
+    set((state) =>
+      // El valor guardado puede ser `undefined` en instalaciones anteriores a
+      // esta preferencia; ahí el estado real es "visible".
+      (state.settings.showTodayIndicators ?? true) === visible
+        ? {}
+        : { settings: { ...state.settings, showTodayIndicators: visible } },
+    );
+  },
+
   markExported() {
     set((state) => ({
       settings: {
@@ -85,30 +98,66 @@ export const createSettingsSlice: SliceCreator<SettingsSlice> = (set) => ({
   },
 
   replaceAllData(data) {
+    const timestamp = new Date().toISOString();
+    // Un respaldo antiguo —o uno hecho mientras el catálogo estaba vacío por el
+    // fallo que esto corrige— no debe dejar la app sin categorías ni bancos al
+    // restaurarlo. Se completa lo que falte; lo que trae el archivo manda.
+    const catalog = ensureSeedCatalog(
+      {
+        banks: data.banks ?? [],
+        categories: data.categories ?? [],
+        subcategories: data.subcategories ?? [],
+      },
+      timestamp,
+    );
+
     set({
       schemaVersion: data.schemaVersion,
-      banks: data.banks ?? [],
+      banks: catalog.banks,
       accounts: data.accounts ?? [],
-      categories: data.categories ?? [],
-      subcategories: data.subcategories ?? [],
+      categories: catalog.categories,
+      subcategories: catalog.subcategories,
       transactions: data.transactions ?? [],
       history: data.history ?? [],
       settings: data.settings ?? createDefaultSettings(),
-      meta: { ...data.meta, updatedAt: new Date().toISOString() },
+      meta: { ...data.meta, updatedAt: timestamp },
     });
   },
 
   clearAllData() {
-    set((state) => ({
-      banks: [],
-      accounts: [],
-      categories: [],
-      subcategories: [],
-      transactions: [],
-      history: [],
-      // Las preferencias sobreviven a propósito: ver la nota de la interfaz.
-      settings: state.settings,
-      meta: { ...state.meta, updatedAt: new Date().toISOString() },
-    }));
+    set((state) => {
+      const timestamp = new Date().toISOString();
+      /**
+       * ⚠️ EL CATÁLOGO NO SE BORRA: SE REPONE DE FÁBRICA.
+       *
+       * Antes esto vaciaba también categorías y bancos —de 15 y 4 a cero— y
+       * dejaba una app que ya no sabe clasificar un gasto y en la que **no se
+       * puede crear una cuenta**, porque una cuenta necesita un banco. El
+       * usuario pulsaba "borrar mis datos" y se encontraba con una app rota.
+       *
+       * Se llevaba además las categorías de sistema (`sys_ajuste`,
+       * `sys_sin_categoria`), de las que depende el ajuste de saldo: una
+       * referencia rota esperando a que alguien cuadre una cuenta.
+       *
+       * Lo que sí se borra es lo que el usuario quiso borrar: sus cuentas, sus
+       * movimientos y su historial.
+       */
+      const catalog = ensureSeedCatalog(
+        { banks: [], categories: [], subcategories: [] },
+        timestamp,
+      );
+
+      return {
+        banks: catalog.banks,
+        categories: catalog.categories,
+        subcategories: catalog.subcategories,
+        accounts: [],
+        transactions: [],
+        history: [],
+        // Las preferencias sobreviven a propósito: ver la nota de la interfaz.
+        settings: state.settings,
+        meta: { ...state.meta, updatedAt: timestamp },
+      };
+    });
   },
 });

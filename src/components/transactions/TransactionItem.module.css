@@ -26,28 +26,55 @@
   justify-content: center;
 }
 
+/**
+ * ⚠️ `display: flex` NO ES DECORATIVO AQUÍ. Es lo que arregla el fallo.
+ *
+ * `.description` y `.meta` son dos `<span>`. Sin declarar la dirección, este
+ * contenedor era un bloque normal y los dos spans quedaban EN LA MISMA LÍNEA,
+ * uno detrás del otro: medido en el navegador, el nombre acababa en x=451 y el
+ * detalle empezaba en x=450. El nombre y su categoría aparecían pegados y
+ * pisándose, y con un nombre largo la línea entera invadía el importe.
+ *
+ * Y había un segundo efecto encadenado: `overflow: hidden` **no se aplica a
+ * cajas inline**, así que el `text-overflow: ellipsis` que ya estaba escrito
+ * abajo no llegaba a actuar nunca. No estaba mal escrito — es que no podía
+ * funcionar sobre un `display: inline`.
+ *
+ * Al declarar la columna, los hijos de un contenedor flex se "blockifican":
+ * se apilan, ocupan el ancho disponible y el recorte con puntos suspensivos
+ * empieza a funcionar. Por eso no hace falta tocar nada más.
+ */
 .info {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   /* Sin `min-width: 0` el texto largo desborda el flex en vez de recortarse:
      bug clásico y presente en v1. */
   min-width: 0;
+  gap: 2px;
 }
 
 .description {
   font-size: var(--font-size-body);
   font-weight: var(--font-weight-semibold);
+  /* Un nombre largo se recorta con puntos suspensivos en vez de partirse en
+     varias líneas: así todas las filas de la lista miden lo mismo y el ojo
+     puede recorrer la columna de importes sin saltos. */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  /* El ancho lo pone el contenedor, no el contenido: sin esto, un nombre muy
+     largo estiraría la caja antes de recortarse. */
+  max-width: 100%;
 }
 
 .meta {
   font-size: var(--font-size-label);
   color: var(--color-on-surface-variant);
-  margin-top: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .amount {

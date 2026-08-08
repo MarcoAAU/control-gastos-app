@@ -2,6 +2,7 @@ import { AppDataRepository } from '@/storage/AppDataRepository';
 import { createLocalStorageAdapter } from '@/storage/adapters/localStorageAdapter';
 import { useAppStore } from './index';
 import { startPersistence, type PersistenceHandle } from './persistence';
+import { registerRefresh } from './refresh';
 
 /**
  * Arranque de la aplicación: leer → migrar → hidratar → empezar a persistir.
@@ -87,5 +88,8 @@ export async function bootstrapApp(): Promise<Bootstrap> {
   if (warnings.length > 0) store.setStartupWarnings(warnings);
 
   const persistence = startPersistence(repository);
+  // El botón de refrescar necesita las dos referencias, y las pantallas no
+  // pueden importar `storage/**`. Se depositan aquí una sola vez.
+  registerRefresh({ repository, persistence });
   return { persistence, repository };
 }

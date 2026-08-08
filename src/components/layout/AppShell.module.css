@@ -45,6 +45,19 @@
   flex-shrink: 0;
 }
 
+/* Giro mientras se releen los datos. `prefers-reduced-motion` lo detiene desde
+   `reset.css`; el botón sigue deshabilitándose, así que la señal de "estoy
+   trabajando" no depende sólo del movimiento. */
+.refreshing {
+  animation: refreshSpin 800ms linear infinite;
+}
+
+@keyframes refreshSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ── Contenido ─────────────────────────────────────────────────────────── */
 .main {
   flex: 1;
@@ -78,6 +91,48 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/**
+ * Entrada lateral, cuando se llegó deslizando.
+ *
+ * El recorrido es mayor que el de la entrada vertical (24 px frente a 8) para
+ * que se lea como un desplazamiento y no como un parpadeo: el dedo acaba de
+ * recorrer al menos 60 px y la pantalla tiene que responder a eso.
+ *
+ * Al tocar la barra inferior no hay dirección y se usa `screenEnter`: un salto
+ * sin lateralidad no debería fingir que la hubo.
+ */
+.enterFromRight {
+  animation: screenEnterRight var(--motion-duration-medium) var(--motion-easing-decelerate) both;
+}
+
+.enterFromLeft {
+  animation: screenEnterLeft var(--motion-duration-medium) var(--motion-easing-decelerate) both;
+}
+
+@keyframes screenEnterRight {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes screenEnterLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 

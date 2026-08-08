@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { HistoryEntry } from '@/models';
-import { Fab, ScreenContainer, TopBar } from '@/components/layout';
+import { Fab, ScreenActions, ScreenContainer, TopBar } from '@/components/layout';
 import { Button, Card, EmptyState, Sheet, TextField } from '@/components/ui';
 import { TransactionItem } from '@/components/transactions/TransactionItem';
 import { StatTile } from '@/components/common/StatTile';
@@ -103,7 +103,7 @@ export default function HistoryScreen() {
 
   return (
     <>
-      <TopBar title="Historial" icon="nav-history" />
+      <TopBar title="Historial" icon="nav-history" actions={<ScreenActions />} />
 
       <ScreenContainer>
         {sorted.length === 0 ? (

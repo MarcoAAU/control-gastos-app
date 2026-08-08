@@ -193,3 +193,42 @@ Ejecutado sobre el **build de producción**, con el blob v1 sembrado en un perfi
 | 81 | **Migración con el blob v1 REAL** | Los fixtures son sintéticos; nunca se capturó un dump del dispositivo, y no debe capturarse sin anonimizar. Los saldos reales sólo se confirman en el teléfono |
 | 82 | **APK regenerado con el keystore ORIGINAL** | ⚠️ Con un keystore nuevo la actualización falla y obliga a desinstalar, lo que borra el `localStorage` del WebView: los datos financieros |
 | 83 | Lighthouse en producción | Necesita un Chrome controlable desde fuera. Sustituido por la auditoría manual de los ítems 44-47 |
+
+## Correcciones y mejoras posteriores a v2.1
+
+Verificado sobre el build de producción, a 375 px salvo donde se indica.
+
+| # | Comprobación | Resultado |
+|---|---|---|
+| 84 | "Borrar todos los datos" conserva las 15 categorías y los 5 bancos | ✅ |
+| 85 | …y borra lo que debe: cuentas, movimientos e historial | ✅ |
+| 86 | Un documento ya dañado se repara solo al abrir la app, **y se guarda** | ✅ |
+| 87 | El segundo arranque no repara ni avisa otra vez | ✅ |
+| 88 | Diez pasadas seguidas no duplican ninguna categoría | ✅ |
+| 89 | Las categorías editadas por el usuario conservan nombre y color | ✅ |
+| 90 | Las categorías archivadas no resucitan | ✅ |
+| 91 | Tras borrar todo se puede volver a crear una cuenta | ✅ |
+| 92 | Nombre y detalle del movimiento quedan APILADOS, no en la misma línea | ✅ |
+| 93 | Nombres de 281-319 px en 176-196 px se recortan con puntos suspensivos | ✅ |
+| 94 | Ni el nombre ni el detalle invaden el importe | ✅ |
+| 95 | Todas las filas miden lo mismo y no hay desbordamiento horizontal | ✅ |
+| 96 | Refresh y Ajustes en las 7 pestañas, misma posición y tamaño (40×40) | ✅ |
+| 97 | Refresh no duplica, no borra y deja al usuario en la misma pantalla | ✅ |
+| 98 | **Refresh pulsado antes del rebote de 300 ms no pierde el movimiento** | ✅ |
+| 99 | Indicadores: plegar/desplegar, `aria-expanded`, `inert` al plegarse | ✅ |
+| 100 | Plegado mide 0 px: sin huecos residuales | ✅ |
+| 101 | La preferencia sobrevive a cerrar y reabrir la app | ✅ |
+| 102 | Swipe izquierda/derecha recorre las pestañas en orden | ✅ |
+| 103 | No navega: gesto corto, vertical, lento o diagonal dudosa | ✅ |
+| 104 | No navega desde una fila, el buscador o el FAB | ✅ |
+| 105 | No navega con una hoja abierta; funciona otra vez al cerrarla | ✅ |
+| 106 | No da la vuelta en los extremos ni actúa fuera de las pestañas | ✅ |
+| 107 | La barra inferior y el botón Atrás siguen funcionando | ✅ |
+| 108 | El scroll vertical no se ve afectado | ✅ |
+| 109 | La entrada se anima según la dirección del gesto | ✅ |
+| 110 | Crear / duplicar / editar / borrar movimiento (12→13→14→13) | ✅ |
+| 111 | Saldo, ingresos, gastos, indicadores y gráficas siguen bien | ✅ |
+| 112 | Las 7 pantallas cargan sin errores de consola | ✅ |
+| 113 | A 768 px: sin desbordamiento y sin superposiciones | ✅ |
+
+**Nota 9 — cambio de comportamiento en el botón Refresh (esperado 🔄).** Antes borraba todas las cachés y recargaba la página: eso forzaba una versión nueva de la app, no refrescaba datos. Ahora relee los datos del dispositivo sin sacar al usuario de la pantalla. La actualización a una versión nueva la sigue haciendo sola el Service Worker al reabrir la app.
