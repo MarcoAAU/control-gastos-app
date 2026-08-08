@@ -1,5 +1,7 @@
-import { Suspense, type ReactNode } from 'react';
+import { Suspense, useEffect, type ReactNode } from 'react';
+import { useLocation, useNavigationType } from 'react-router-dom';
 import { Skeleton, ToastHost } from '@/components/ui';
+import { cn } from '@/utils/cn';
 import { BottomNav } from './BottomNav';
 import { StartupBanner } from './StartupBanner';
 import styles from './AppShell.module.css';
@@ -45,10 +47,40 @@ export function RouteFallback() {
  * Contenedor del contenido de una pantalla. Aplica los márgenes y el hueco
  * inferior para que la barra fija no tape el último elemento de una lista —
  * un detalle que en v1 había que recordar en cada vista.
+ *
+ * ── POR QUÉ LA TRANSICIÓN VIVE AQUÍ Y NO ALREDEDOR DE `<Routes>` ──────────
+ * Lo natural sería envolver todo el enrutado, pero la animación usa
+ * `transform`, y un elemento transformado se convierte en el bloque contenedor
+ * de sus descendientes `position: fixed`. El FAB es fixed: envolviendo la
+ * pantalla entera, durante los 200 ms de la animación se anclaría al fondo del
+ * CONTENIDO —que en una lista larga está muy por debajo de la pantalla— y
+ * volvería de un salto al terminar.
+ *
+ * Animando sólo `<main>`, el FAB y la barra superior quedan fuera: no se
+ * mueven. Que la cabecera se quede quieta mientras el contenido entra es
+ * además lo que hace una app nativa.
+ *
+ * ── EL SALTO AL PRINCIPIO NO ES UN EXTRA ──────────────────────────────────
+ * Sin él, ir de una lista de movimientos con scroll a una pantalla corta deja
+ * la ventana desplazada y la nueva pantalla aparece en blanco. Se omite al
+ * volver con Atrás (`POP`): ahí el usuario espera reencontrar el sitio donde
+ * estaba, no el principio.
  */
 export function ScreenContainer({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+  const navigationType = useNavigationType();
+
+  useEffect(() => {
+    if (navigationType === 'POP') return;
+    window.scrollTo(0, 0);
+  }, [pathname, navigationType]);
+
   return (
-    <main className={styles.main}>
+    // `key` reinicia la animación de entrada al cambiar de ruta. Hace falta
+    // porque dos rutas pueden compartir componente (historial y su detalle):
+    // sin remontar, React reutilizaría el nodo y la animación no volvería a
+    // dispararse.
+    <main key={pathname} className={cn(styles.main, styles.enter)}>
       <StartupBanner />
       {children}
     </main>

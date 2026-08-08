@@ -118,3 +118,34 @@ Los dos 🔄 están explicados en las notas 1 y 5.
 | 41 | **Agregar un gasto NO reduce la cifra de "Ingresos" del periodo** (la queja original del usuario, resuelta de raíz) | | |
 | 42 | Una transacción de ajuste de saldo **no** aparece en los totales de ingresos ni de gastos | | |
 | 43 | Tras migrar de v1 a v2, **el saldo de cada cuenta es idéntico** al que mostraba v1 | | |
+
+## Accesibilidad y apariencia (Fase 18)
+
+Medido sobre el build de producción, en las 8 pantallas y en los 2 temas.
+
+| # | Comportamiento | Fase 18 | Fase 20 |
+|---|---|---|---|
+| 44 | Ningún par texto/fondo por debajo de AA (4.5:1, o 3:1 en texto grande) | ✅ | |
+| 45 | Ningún control sin nombre accesible, ningún campo sin etiqueta | ✅ | |
+| 46 | Sin `id` duplicados ni `aria-labelledby` roto ni `tabindex` positivo | ✅ | |
+| 47 | Los encabezados no saltan niveles (`h1` → `h2`, nunca `h1` → `h3`) | ✅ | |
+| 48 | El foco no sale de una hoja abierta ni con Tab ni con Mayús+Tab | ✅ | |
+| 49 | Escape cierra la hoja, devuelve el foco y restaura el scroll del fondo | ✅ | |
+| 50 | El anillo de foco se ve en todo control alcanzable con teclado | ✅ | |
+| 51 | Las flechas recorren las pestañas de periodo; el grupo es UNA parada de Tab | ✅ | |
+| 52 | El tema claro se elige en Ajustes y se conserva al recargar | ✅ | |
+| 53 | «Sistema» sigue al modo del teléfono y lo dice en pantalla | ✅ | |
+| 54 | **No hay parpadeo oscuro al arrancar con el tema claro** | ✅ | |
+| 55 | La barra de estado del sistema toma el color del tema activo | ✅ | |
+| 56 | A 768 px la columna se ensancha a 600 px sin desbordamiento horizontal | ✅ | |
+| 57 | Los estados vacíos de pantalla completa muestran ilustración, no un icono | ✅ | |
+| 58 | Cambiar de pestaña salta al principio de la pantalla; Atrás no | ✅ | |
+| 59 | El FAB no se descoloca durante la transición de pantalla | ✅ | |
+| 60 | `prefers-reduced-motion` anula animaciones y transiciones | ✅ | |
+
+**Nota 7 — lo que NO se pudo verificar en el navegador integrado.** Tres comprobaciones quedan pendientes de un dispositivo real, y conviene saber por qué:
+
+- **Activación con Enter/Espacio.** El automatismo entrega el evento de teclado pero el navegador no ejecuta la acción por defecto: un `<button>` nativo insertado a mano en la página tampoco recibe `click`. Se comprobó en su lugar que no existe ningún `<div onClick>` en la app — todo control es un `<button>` o un `<a>` reales, que es lo que garantiza esa activación.
+- **El evento `change` de `prefers-color-scheme`.** El emulador cambia `matches` sin emitirlo (verificado con un `addEventListener` propio). La resolución sí se comprobó, recargando en cada esquema: «Sistema» da oscuro con el sistema en oscuro y claro con el sistema en claro.
+- **Animaciones y transiciones en marcha.** La pestaña no compone fotogramas (`document.timeline.currentTime` no avanza y `requestAnimationFrame` no se dispara), así que toda propiedad con `transition` se queda congelada en su valor inicial. Es la causa del único "fallo" de contraste que aparecía en la barra inferior: medido desde los tokens, da 6,24:1 inactivo y 5,68:1 activo.
+- **Lighthouse.** No se ejecutó: requiere un Chrome controlable desde fuera. Las comprobaciones 44-47 son las mismas que audita su apartado de accesibilidad, hechas a mano sobre las 8 pantallas y los 2 temas.

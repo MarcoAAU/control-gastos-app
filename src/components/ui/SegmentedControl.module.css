@@ -1,0 +1,68 @@
+/**
+ * Píldora de opciones excluyentes.
+ *
+ * Los estilos vienen de `.period-tabs` de v1, con dos añadidos de la Fase 18:
+ * capa de estado al pulsar (antes el control no daba ninguna señal táctil) y
+ * un anillo de foco que se dibuja HACIA DENTRO.
+ */
+
+.group {
+  display: flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border-radius: var(--shape-full);
+  background: var(--color-surface-container);
+  border: 1px solid var(--color-outline);
+}
+
+.option {
+  position: relative;
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--shape-full);
+  font-size: var(--font-size-body-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-on-surface-variant);
+  min-height: 40px;
+  transition:
+    background-color var(--motion-duration-short) var(--motion-easing-standard),
+    color var(--motion-duration-short) var(--motion-easing-standard);
+}
+
+/* Capa de estado MD3, igual que en Button: currentColor con opacidad, para
+   que funcione sobre la opción activa (fondo primario) y sobre las demás
+   (fondo transparente) sin escribir un color para cada caso. */
+.option::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-duration-short) var(--motion-easing-standard);
+}
+
+@media (hover: hover) {
+  .option:hover::after {
+    opacity: var(--state-hover-opacity);
+  }
+}
+
+.option:active::after {
+  opacity: var(--state-pressed-opacity);
+}
+
+/* El anillo por defecto (outline-offset: 2px) se dibujaría FUERA de la
+   píldora y quedaría cortado por el borde del grupo. Hacia dentro se ve
+   entero y encuadra justo la opción enfocada. */
+.option:focus-visible {
+  outline-offset: -3px;
+}
+
+.optionActive {
+  background: var(--color-primary);
+  /* Azul muy oscuro sobre el primario, no blanco: el par blanco/#6c8dff de v1
+     daba 3.05:1, por debajo del mínimo AA. Ver ADR-012. */
+  color: var(--color-on-primary);
+}

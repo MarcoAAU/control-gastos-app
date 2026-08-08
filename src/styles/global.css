@@ -37,6 +37,16 @@ body {
   background: var(--color-surface);
 }
 
+/* En pantallas anchas la columna necesita un límite visible. Sin él la app
+   parece contenido flotando en el centro de un vacío; con dos líneas finas
+   se lee como una ventana, que es lo que es. No se usa una sombra: en tema
+   claro, sobre fondo del mismo color, no se vería. */
+@media (min-width: 768px) {
+  #root {
+    border-inline: 1px solid var(--color-outline);
+  }
+}
+
 /* Los importes deben alinearse en columna y no "bailar" al cambiar de cifra. */
 .tabular {
   font-variant-numeric: tabular-nums;

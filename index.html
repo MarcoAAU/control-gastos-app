@@ -11,6 +11,45 @@
     <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./icons/icon-192.png" />
     <title>Mis Gastos</title>
+
+    <!--
+      TEMA ANTES DEL PRIMER PÍXEL.
+
+      El CSS por defecto es el tema oscuro, y `data-theme` lo pone React en un
+      efecto. Para quien haya elegido el tema claro eso significa un
+      PARPADEO NEGRO en cada arranque: la página se pinta oscura, el módulo se
+      descarga, se hidratan los datos y sólo entonces cambia. En la app
+      instalada, que ya viene de una pantalla de bienvenida, el salto se ve
+      perfectamente.
+
+      Este script corre antes de que el navegador pinte nada, así que el primer
+      fotograma ya sale con el tema correcto.
+
+      ⚠️ DUPLICA A PROPÓSITO tres cosas que también viven en `src/`: la clave de
+      almacenamiento, el valor por defecto y la regla de "system". No hay
+      alternativa: aquí no se pueden importar módulos, y cualquier `import`
+      convertiría esto en una descarga más y devolvería el parpadeo. La
+      duplicación está atada con un test (`src/constants/storageKeys.test.ts`)
+      que compara este archivo con las constantes reales.
+
+      Todo va dentro de un try/catch mudo: un fallo leyendo el tema NUNCA debe
+      impedir que arranque una app de finanzas. Si algo sale mal se queda el
+      oscuro por defecto, que es lo que había.
+    -->
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem('gastos_app_data_v2');
+          var pref = raw ? JSON.parse(raw).settings.theme : 'dark';
+          if (pref === 'system') {
+            pref = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+          }
+          document.documentElement.setAttribute('data-theme', pref === 'light' ? 'light' : 'dark');
+        } catch (e) {
+          /* Sin tema guardado o ilegible: se queda el oscuro por defecto. */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

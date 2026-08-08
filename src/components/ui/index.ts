@@ -24,6 +24,9 @@ export type { SkeletonProps, SkeletonVariant } from './Skeleton';
 export { EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
 
+export { EmptyIllustration } from './EmptyIllustration';
+export type { EmptyIllustrationProps, IllustrationKey } from './EmptyIllustration';
+
 // Overlays (Fase 6). `Overlay` NO se exporta a propósito: es la base interna
 // de los tres siguientes y nadie debe usarla directamente.
 export { Sheet } from './Sheet';
@@ -52,6 +55,9 @@ export type { SelectOption, SelectProps } from './Select';
 
 export { Chip } from './Chip';
 export type { ChipProps } from './Chip';
+
+export { SegmentedControl } from './SegmentedControl';
+export type { SegmentedControlProps, SegmentedOption } from './SegmentedControl';
 
 // Selectores de apariencia (Fase 11).
 export { ColorPicker } from './ColorPicker';

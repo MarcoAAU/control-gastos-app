@@ -1,6 +1,5 @@
-import { useEffect } from 'react';
 import { AppRouter } from '@/router/AppRouter';
-import { useAppStore } from '@/store';
+import { useAppliedTheme } from '@/hooks/useAppliedTheme';
 
 /**
  * Raíz de la aplicación.
@@ -8,23 +7,12 @@ import { useAppStore } from '@/store';
  * El arranque (leer → migrar → hidratar) ocurre en `main.tsx` ANTES de
  * renderizar, así que aquí el estado ya está listo y no hay pantalla de carga
  * intermedia.
+ *
+ * Lo único que hace este componente es aplicar el tema. La lógica vive en
+ * `useAppliedTheme` porque tiene tres piezas —preferencia guardada, esquema
+ * del sistema y color de la barra de estado— y ninguna es asunto de la raíz.
  */
 export default function App() {
-  const theme = useAppStore((state) => state.settings.theme);
-
-  /**
-   * Aplica el tema al elemento raíz.
-   *
-   * Es el único sitio de la app que toca `data-theme`. Los componentes leen
-   * roles de color (`--color-surface`), nunca el tema: por eso cambiar de tema
-   * no requiere tocar ni un componente.
-   *
-   * `'system'` existe en el modelo pero el selector llega en la Fase 18; hoy
-   * cae en oscuro, que es lo que el usuario ya tiene instalado.
-   */
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme === 'light' ? 'light' : 'dark');
-  }, [theme]);
-
+  useAppliedTheme();
   return <AppRouter />;
 }

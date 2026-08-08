@@ -2,14 +2,20 @@
   margin-bottom: var(--space-4);
 }
 
+/**
+ * Título de sección, igual que "Cuentas" y "Movimientos recientes".
+ *
+ * Era una "cejilla" de 12 px en mayúsculas. Entre sus dos vecinas de 16 px en
+ * negrita se leía como un pie de la sección anterior en vez de como el título
+ * de ésta — el Inicio tenía tres secciones al mismo nivel y una de ellas
+ * parecía un anexo. La cejilla es un recurso válido, pero para un rótulo
+ * DENTRO de un bloque, no para el rótulo del bloque.
+ */
 .heading {
-  font-size: var(--font-size-label);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-on-surface-variant);
-  text-transform: uppercase;
-  letter-spacing: var(--letter-spacing-wide);
-  margin-bottom: var(--space-2);
-  padding-left: var(--space-1);
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-on-surface);
+  margin-bottom: var(--space-3);
 }
 
 /**

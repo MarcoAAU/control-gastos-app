@@ -1,0 +1,60 @@
+/**
+ * Paleta de las ilustraciones de estado vacío.
+ *
+ * Todos los rellenos son roles de color, nunca hex: es lo que hace que los
+ * dibujos funcionen en claro y en oscuro sin una segunda versión de cada uno.
+ *
+ * El contraste aquí NO tiene que llegar a 4.5:1 — son formas decorativas,
+ * marcadas `aria-hidden`, y el criterio de WCAG para texto no aplica. Lo que
+ * sí tienen que hacer es distinguirse del fondo de la tarjeta, y por eso usan
+ * los contenedores altos y no la superficie base.
+ */
+
+.root {
+  width: 120px;
+  height: 96px;
+}
+
+/* Sombra de apoyo: muy tenue, sólo para que el dibujo no flote. */
+.shadow {
+  fill: var(--color-on-surface);
+  opacity: 0.06;
+}
+
+/* Pieza de fondo del apilado (el recibo de detrás). */
+.back {
+  fill: var(--color-surface-container-high);
+}
+
+/* Pieza principal. */
+.front {
+  fill: var(--color-surface-container-highest);
+  stroke: var(--color-outline);
+  stroke-width: 1.5;
+}
+
+/* Renglones de contenido ausente. */
+.line {
+  fill: var(--color-outline);
+}
+
+.accentLine {
+  fill: var(--color-primary);
+  opacity: 0.55;
+}
+
+.accent {
+  fill: var(--color-primary-container);
+}
+
+.dot {
+  fill: var(--color-primary);
+}
+
+/* Cristal de la lupa: translúcido para que se vea la lista por debajo. */
+.lens {
+  fill: var(--color-primary-container);
+  fill-opacity: 0.75;
+  stroke: var(--color-primary);
+  stroke-width: 2.5;
+}

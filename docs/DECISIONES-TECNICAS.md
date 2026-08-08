@@ -547,6 +547,105 @@ Verificado en las dos direcciones: con "Tarjeta Nu" puesto en Reportes, Movimien
 
 ---
 
+## ADR-038 — El tema se aplica antes del primer píxel, y eso obliga a duplicar tres líneas en `index.html`
+
+**Contexto.** El tema claro existía desde la Fase 2 pero no se podía elegir: `App.tsx` traducía la preferencia a `data-theme` en un efecto, y `'system'` caía siempre en oscuro. La Fase 18 añade el selector y engancha `prefers-color-scheme`.
+
+**El problema que aparece al hacerlo.** El CSS por defecto es oscuro y `data-theme` lo pone React. Para quien elija el tema claro, cada arranque pinta la pantalla oscura, descarga el módulo, hidrata los datos y sólo entonces cambia: un **parpadeo negro** en cada apertura. En la app instalada, que ya viene de una pantalla de bienvenida, se ve perfectamente.
+
+**Decisión.** Un script de 12 líneas en el `<head>` de `index.html`, antes de cualquier `<script type="module">`. Lee la preferencia, resuelve `'system'` y pone `data-theme` antes de que el navegador pinte nada.
+
+**El coste, dicho en claro: duplica tres cosas** que también viven en `src/` — la clave `gastos_app_data_v2`, el tema por defecto y la regla de `'system'`. No hay alternativa: en el `<head>` no se pueden importar módulos, y cualquier `import` sería una descarga más, que es exactamente lo que devuelve el parpadeo.
+
+Lo que sí se puede hacer es que la duplicación no se pudra en silencio. `src/constants/storageKeys.test.ts` lee `index.html` y comprueba las tres. Sin ese test, el día que cambie `STORAGE_KEY` —una migración v2→v3— el script leería la clave vieja y el fallo sería de los peores: no rompe nada, no da error, sólo devuelve el parpadeo. Nadie lo ataría a un cambio de constantes hecho meses antes.
+
+**`'system'` pregunta por CLARO, no por oscuro.** `(prefers-color-scheme: dark)` y `(prefers-color-scheme: light)` fallan las dos cuando el sistema no expresa preferencia. Preguntando por claro, ese caso cae en oscuro — el tema por defecto y el que el usuario ya tiene instalado. Al revés, cambiaría de aspecto en dispositivos que no dijeron nada. El script del `<head>` y `useSystemColorScheme` usan la misma consulta, y el test lo verifica.
+
+**El color de la barra de estado se lee del token, no se escribe a mano.** `useAppliedTheme` pone `<meta name="theme-color">` con el valor calculado de `--color-surface` justo después de cambiar `data-theme`. Con un hex literal, retocar la paleta dejaría la franja del sistema con el color viejo — un borde de otro color pegado al borde de la app, imposible de encontrar leyendo el CSS.
+
+---
+
+## ADR-039 — `SegmentedControl`: los roles ARIA describen un widget, no lo implementan
+
+**Contexto.** `PeriodTabs` decía en su comentario que era un `radiogroup` navegable con flechas. Era falso: `role="radio"` sobre un `<button>` le dice al lector de pantalla que es una opción, pero no aporta ningún comportamiento. Tab pasaba por las cuatro opciones una a una y las flechas no hacían nada.
+
+**Decisión.** Extraer `components/ui/SegmentedControl` con el comportamiento real de un grupo de radios: `tabIndex` móvil (sólo la opción marcada vale 0), flechas que mueven selección y foco a la vez con vuelta al principio, y `Home`/`End`.
+
+**Por qué ahora y no en la Fase 2.** Hasta esta fase había un único uso. El selector de tema es el segundo, y con dos copias el teclado sólo funciona bien en la que alguien se acuerde de arreglar (ADR-011: un componente compartido se crea cuando aparece el segundo uso real, no antes).
+
+**Detalle que sólo se ve probándolo.** El desplazamiento se calcula desde la opción **enfocada**, no desde la marcada. Normalmente son la misma, pero si dejan de serlo la flecha saltaría a un sitio que no está al lado de lo que el usuario tiene delante. Y el foco se mueve siempre, aunque la opción ya estuviera marcada: si no, una flecha que cae sobre la opción actual no haría nada y el recorrido se quedaría atascado ahí.
+
+Verificado con pulsaciones reales de teclado: `-1,-1,0,-1` de partida, vuelta al principio en los dos sentidos y `Home`/`End` correctos.
+
+---
+
+## ADR-040 — La transición de pantalla anima `<main>`, no el enrutado
+
+**Contexto.** Falta una transición al cambiar de pestaña. Lo natural es envolver `<Routes>`.
+
+**Por qué eso está mal.** La animación usa `transform`, y un elemento transformado se convierte en el bloque contenedor de sus descendientes `position: fixed`. El FAB es fixed y se renderiza dentro de la pantalla: envolviendo el enrutado, durante los 200 ms de la animación se anclaría al fondo del **contenido** —que en una lista larga está muy por debajo de la ventana— y volvería de un salto al terminar.
+
+**Decisión.** La animación vive en `ScreenContainer`, es decir sólo en `<main>`. El FAB y la barra superior quedan fuera y no se mueven, que además es lo que hace una app nativa: la cabecera se queda quieta y el contenido entra.
+
+Verificado midiendo el FAB en pleno vuelo y al terminar: 84 px desde abajo en los dos momentos, con `matrix(1, 0, 0, 1, 0, 8)` aplicado a `<main>`.
+
+**El salto al principio va con la transición, y no es un extra.** Sin él, ir de una lista de movimientos con scroll a una pantalla corta deja la ventana desplazada y la nueva pantalla aparece en blanco. Se omite cuando la navegación es `POP` (botón Atrás): ahí el usuario espera reencontrar el sitio donde estaba.
+
+`prefers-reduced-motion` la anula desde `reset.css`, que ya reduce toda animación a 0,01 ms con `!important`.
+
+---
+
+## ADR-041 — Nivel de encabezado y tamaño de letra responden a preguntas distintas
+
+**Contexto.** Un barrido de accesibilidad encontró dos cosas a la vez: saltos de `h1` a `h3` en Seguimiento y Reportes, y cinco tratamientos tipográficos distintos para lo que era el mismo nivel de sección.
+
+**Decisión.** Dos reglas separadas:
+
+- **Nivel** (estructura del documento): `h1` es el título de pantalla, en la barra superior. `h2` es toda sección de primer nivel dentro de `main`. `h3` queda para lo que cuelga de un `h2` — los grupos de la hoja de filtros, que cuelgan del `h2` del propio diálogo.
+- **Tamaño** (peso visual): las secciones de pantalla van a 16 px en negrita. Es el tratamiento que ya tenían "Cuentas", "Movimientos recientes" y las tarjetas de Ajustes; se alinean con él "En qué se fue", "Exportar" y las gráficas.
+
+**La cejilla de "Indicadores de este mes" se retira.** Eran 12 px en mayúsculas entre dos vecinas de 16 px en negrita: se leía como el pie de la sección anterior en vez de como el título de ésta. El Inicio tenía tres secciones al mismo nivel y una parecía un anexo. La cejilla es un recurso válido para un rótulo **dentro** de un bloque, no para el rótulo del bloque.
+
+**Y una excepción documentada.** "Subcategorías" es `h2` pero se ve a 15 px semi-negrita. El nivel responde a la estructura —no hay ningún encabezado por encima al que colgarse, porque el nombre de la categoría vive dentro de un botón y un botón no puede contener un encabezado— mientras que el tamaño responde al peso que merece el bloque. A 16 px en negrita gritaría más que el nombre de la categoría que lo contiene.
+
+---
+
+## ADR-042 — Las ilustraciones de estado vacío son SVG en línea, y sólo cuatro
+
+**Decisión.** `components/ui/EmptyIllustration` con cuatro dibujos escritos a mano, rellenos con roles de color. `EmptyState` los acepta por una clave de un conjunto **cerrado**, nunca por ruta ni por `ReactNode`.
+
+**Por qué no archivos.** Un PNG por ilustración serían cuatro peticiones más y, sobre todo, cuatro imágenes con el fondo cocido dentro: en tema claro quedarían como recortes oscuros pegados sobre blanco. En línea usan los mismos tokens que el resto de la app y siguen al tema sin que exista una segunda versión de cada dibujo. Pesan ~1,2 kB en total, menos que un solo PNG.
+
+**Por qué el conjunto es cerrado.** Un `ReactNode` dejaría entrar cualquier imagen, y con ella los colores fijos que el punto anterior evita.
+
+**Por qué sólo cuatro y por qué `compact` las ignora.** Se ilustran los vacíos que ocupan la pantalla entera —cuentas, movimientos, búsqueda sin resultados, historial—, que es donde el hueco se nota y donde alguien que abre la app por primera vez decide si está rota o simplemente vacía. Un dibujo de 96 px dentro de una tarjeta de resumen desplaza el contenido real y convierte "sin gastos esta semana", que es una nota al margen, en lo más llamativo de la pantalla.
+
+En Movimientos el dibujo depende del motivo: "todavía no hay nada" y "hay cosas, pero las estás escondiendo" son dos situaciones distintas, y el dibujo lo dice antes de leer el texto.
+
+---
+
+## ADR-043 — La tablet ensancha la columna; no reorganiza la app
+
+**Decisión.** A partir de 768 px, `--layout-max-width` pasa de 480 a 600 px y `--layout-gutter` de 16 a 24. Nada más, salvo dos líneas finas que delimitan la columna.
+
+**Por qué no dos paneles.** Sería un segundo diseño que mantener y probar para el único dispositivo que el usuario no tiene: la app se instala como APK en su teléfono. Y una línea de texto por encima de unos 75 caracteres se lee peor, no mejor.
+
+**Por qué basta con cambiar dos tokens.** La barra inferior, el FAB y los paneles de las hojas ya se anclan a `--layout-max-width`. Ese es exactamente el trabajo que hace un token, y se comprobó: a 768 px la barra mide 600 px y queda centrada al píxel sobre el contenido, sin desbordamiento horizontal.
+
+---
+
+## ADR-044 — Un barrido del código fuente para los iconos, porque el tipado no puede
+
+**Contexto.** `<Icon>` pinta la clave tal cual si no está en el registro. Es deliberado: así los emojis que v1 guardó en los datos del usuario ("🍔", "🏦") siguen viéndose sin migrar nada. El precio es que una clave mal escrita no falla — se dibuja. Ya pasó: la fila de saldo de Seguimiento mostró la palabra «scale» en texto plano durante toda la Fase 16, sin error en consola ni fallo de compilación.
+
+**Por qué el tipo no lo arregla.** `<Icon name>` es un `string` y tiene que serlo, porque el nombre puede venir de datos guardados.
+
+**Decisión.** `src/constants/icons.test.ts` recorre `src/` y comprueba que toda clave **escrita a mano** —`icon="…"` y `<Icon name="…">`— está registrada. La afirmación es más estricta que la del tipo y sigue siendo cierta: un literal en el código nunca es un emoji heredado. Se añade además la comprobación de los catálogos semilla (bancos, categorías, subcategorías, tipos de cuenta, pestañas).
+
+Si falla hay dos salidas legítimas: registrar el icono o corregir la errata. Silenciarlo devuelve la app al estado en que una palabra en inglés puede aparecer en medio de la pantalla.
+
+---
+
 ## Decisiones pendientes (se resolverán en su fase)
 
 | Tema | Fase | Nota |

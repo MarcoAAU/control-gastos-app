@@ -63,9 +63,11 @@
   margin-bottom: var(--space-4);
 }
 
+/* Título de sección de pantalla: mismo tratamiento que "En qué se fue" justo
+   encima. Ver la nota de CategoryRanking.module.css. */
 .exportTitle {
-  font-size: var(--font-size-title-sm);
-  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-bold);
   color: var(--color-on-surface);
   margin-bottom: var(--space-2);
 }

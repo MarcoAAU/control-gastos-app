@@ -104,3 +104,24 @@
   --z-sheet: 51;
   --z-toast: 60;
 }
+
+/**
+ * Tablet y escritorio.
+ *
+ * ── POR QUÉ SE ENSANCHA LA COLUMNA Y NO SE REORGANIZA LA APP ──────────────
+ * La tentación en una tablet es repartir el contenido en dos paneles. Sería un
+ * segundo diseño que mantener —y probar— para el único dispositivo que el
+ * usuario NO tiene: la app se instala como APK en su teléfono. Ensanchar la
+ * columna a 600 px aprovecha el espacio sin duplicar nada, y una línea de
+ * texto por encima de ~75 caracteres se lee peor, no mejor.
+ *
+ * Cambiar sólo estos dos tokens basta porque todo lo demás ya se ancla a
+ * ellos: la barra inferior, el FAB y los paneles de las hojas comparten
+ * `--layout-max-width`. Ese es exactamente el trabajo que hace un token.
+ */
+@media (min-width: 768px) {
+  :root {
+    --layout-max-width: 600px;
+    --layout-gutter: 24px;
+  }
+}

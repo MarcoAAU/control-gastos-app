@@ -41,7 +41,7 @@ export function CategoryRanking({ slices, total, periodPhrase }: CategoryRanking
   return (
     <Card>
       <div className={styles.header}>
-        <h3 className={styles.title}>En qué se fue</h3>
+        <h2 className={styles.title}>En qué se fue</h2>
         <span className={styles.total}>{formatMoney(total)}</span>
       </div>
 

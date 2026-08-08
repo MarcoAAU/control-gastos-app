@@ -54,6 +54,33 @@
   padding-bottom: calc(var(--layout-nav-height) + var(--space-10) + env(safe-area-inset-bottom, 0px));
 }
 
+/**
+ * Entrada de pantalla.
+ *
+ * Deliberadamente corta (200 ms) y de recorrido mínimo (8 px). Una transición
+ * que se nota es una transición que estorba: esto se ve en el primer cambio de
+ * pestaña y a partir del quinto ya no se percibe, que es justo lo que se
+ * busca. La cabecera y el FAB no participan (ver `ScreenContainer`).
+ *
+ * `prefers-reduced-motion` la reduce a 0,01 ms desde `reset.css`, así que no
+ * hace falta repetir la media query aquí.
+ */
+.enter {
+  animation: screenEnter var(--motion-duration-medium) var(--motion-easing-decelerate) both;
+}
+
+@keyframes screenEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* ── Barra inferior ────────────────────────────────────────────────────── */
 .bottomNav {
   position: fixed;

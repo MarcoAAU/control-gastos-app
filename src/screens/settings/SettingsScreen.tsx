@@ -9,6 +9,7 @@ import {
   parseBackup,
 } from '@/services/backup/exportAppData';
 import { createDemoData } from '@/services/demo/createDemoData';
+import { ThemeSetting } from './sections/ThemeSetting';
 import { useAppStore } from '@/store';
 import { selectPersisted } from '@/store/types';
 import { formatDateShort } from '@/utils/date';
@@ -172,14 +173,24 @@ export default function SettingsScreen() {
             </Button>
           </div>
 
+          {/* El campo real está oculto y se dispara desde el botón de arriba:
+              el selector de archivos nativo no se puede maquillar. Fuera del
+              recorrido del teclado (`tabIndex={-1}`) para que Tab no se pare
+              en un control invisible, y con nombre propio porque un `<input
+              type=file>` sin etiqueta se anuncia como "botón, sin nombre". */}
           <input
             ref={fileInputRef}
             type="file"
             accept="application/json,.json"
+            aria-label="Archivo de respaldo"
+            tabIndex={-1}
             className={styles.hiddenInput}
             onChange={handleFileChosen}
           />
         </Card>
+
+        {/* ── Apariencia ─────────────────────────────────────────────────── */}
+        <ThemeSetting />
 
         {/* ── Categorías ─────────────────────────────────────────────────── */}
         <Link to={ROUTES.categories} className={styles.navRow}>

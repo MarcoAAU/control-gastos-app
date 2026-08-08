@@ -21,9 +21,17 @@
   margin-bottom: var(--space-2);
 }
 
+/**
+ * "Subcategorías" es un `<h2>` pero NO se ve como los demás `<h2>`, y es
+ * deliberado: el NIVEL responde a la estructura del documento (no hay ningún
+ * encabezado por encima al que colgarse, porque el nombre de la categoría vive
+ * dentro de un botón y un botón no puede contener un encabezado), mientras que
+ * el TAMAÑO responde al peso que merece el bloque. Ponerlo a 16 px en negrita
+ * lo dejaría gritando más que el nombre de la categoría que lo contiene.
+ */
 .subsTitle {
   font-size: var(--font-size-title-sm);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-semibold);
 }
 
 .addSub {

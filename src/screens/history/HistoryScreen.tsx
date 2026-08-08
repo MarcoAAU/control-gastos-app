@@ -109,7 +109,7 @@ export default function HistoryScreen() {
         {sorted.length === 0 ? (
           <Card padding="none">
             <EmptyState
-              icon="nav-history"
+              illustration="history"
               title="Aún no has guardado historial"
               description="Guarda una foto de un periodo —una quincena, un mes— con sus totales congelados. Aunque después edites esos movimientos, la foto no cambia."
               action={

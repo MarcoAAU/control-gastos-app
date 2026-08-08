@@ -23,7 +23,7 @@ export function ChartCard({ title, aside, emptyMessage, children }: ChartCardPro
   return (
     <Card className={styles.card}>
       <div className={styles.header}>
-        <h3 className={styles.title}>{title}</h3>
+        <h2 className={styles.title}>{title}</h2>
         {aside && <span className={styles.aside}>{aside}</span>}
       </div>
 

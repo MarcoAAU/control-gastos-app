@@ -1,29 +1,13 @@
+/**
+ * Lo único que queda propio de las pestañas de periodo: su hueco en la
+ * pantalla. El aspecto del control vive en `SegmentedControl.module.css`.
+ *
+ * La separación no es cosmética: si el margen viviera dentro del primitivo,
+ * el selector de tema de Ajustes arrastraría un hueco que allí no pinta nada,
+ * y quitarlo obligaría a un `className` de compensación — el camino corto
+ * hacia un control con cinco variantes de espaciado.
+ */
+
 .tabs {
-  display: flex;
-  gap: var(--space-1);
-  padding: var(--space-1);
-  border-radius: var(--shape-full);
-  background: var(--color-surface-container);
-  border: 1px solid var(--color-outline);
   margin-bottom: var(--space-4);
-}
-
-.tab {
-  flex: 1;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--shape-full);
-  font-size: var(--font-size-body-sm);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-on-surface-variant);
-  min-height: 40px;
-  transition:
-    background-color var(--motion-duration-short) var(--motion-easing-standard),
-    color var(--motion-duration-short) var(--motion-easing-standard);
-}
-
-.tabActive {
-  background: var(--color-primary);
-  /* Azul muy oscuro sobre el primario, no blanco: el par blanco/#6c8dff de v1
-     daba 3.05:1, por debajo del mínimo AA. Ver ADR-012. */
-  color: var(--color-on-primary);
 }

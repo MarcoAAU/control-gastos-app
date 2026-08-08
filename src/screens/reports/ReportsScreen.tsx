@@ -227,7 +227,7 @@ export default function ReportsScreen() {
         </div>
 
         <Card>
-          <h3 className={styles.exportTitle}>Exportar</h3>
+          <h2 className={styles.exportTitle}>Exportar</h2>
           <p className={styles.exportHint}>
             Se descargan los movimientos que ves ahora, con los filtros aplicados. El archivo se
             abre directamente en Excel.

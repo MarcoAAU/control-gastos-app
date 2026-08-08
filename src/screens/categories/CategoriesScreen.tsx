@@ -150,7 +150,7 @@ export default function CategoriesScreen() {
         {categories.length === 0 ? (
           <Card padding="none">
             <EmptyState
-              icon="nav-categories"
+              illustration="movements"
               title="No hay categorías"
               description="Crea la primera para empezar a clasificar tus movimientos."
               action={
@@ -242,7 +242,7 @@ export default function CategoriesScreen() {
             </p>
 
             <div className={styles.subsHeader}>
-              <h3 className={styles.subsTitle}>Subcategorías</h3>
+              <h2 className={styles.subsTitle}>Subcategorías</h2>
               {!live.isSystem && (
                 <button
                   type="button"

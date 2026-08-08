@@ -6,9 +6,13 @@
   margin-bottom: var(--space-4);
 }
 
+/* Tratamiento de TÍTULO DE SECCIÓN de pantalla: 16 px en negrita, el mismo
+   que "Cuentas", "Movimientos recientes" o cualquier tarjeta de Ajustes.
+   Antes era 15 px semi-negrita y quedaba medio escalón por debajo de sus
+   vecinas — una jerarquía que insinuaba una subordinación que no existe. */
 .title {
-  font-size: var(--font-size-title-sm);
-  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-bold);
   color: var(--color-on-surface);
 }
 

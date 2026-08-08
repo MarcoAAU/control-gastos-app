@@ -135,7 +135,7 @@ export default function AccountsScreen() {
         {accounts.length === 0 ? (
           <Card padding="none">
             <EmptyState
-              icon="nav-accounts"
+              illustration="accounts"
               title="No tienes cuentas conectadas"
               description="Agrega tu primera cuenta para empezar a registrar movimientos. Tú decides el saldo: la app no inventa ninguno."
               action={

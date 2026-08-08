@@ -237,7 +237,10 @@ export default function TransactionsScreen() {
         {visible.length === 0 ? (
           <Card padding="none">
             <EmptyState
-              icon="nav-transactions"
+              // La lista vacía significa dos cosas muy distintas: "todavía no
+              // hay nada" o "hay cosas, pero las estás escondiendo". El dibujo
+              // lo dice antes de leer el texto.
+              illustration={transactions.length === 0 ? 'movements' : 'search'}
               title={
                 transactions.length === 0
                   ? 'Todavía no hay movimientos'
