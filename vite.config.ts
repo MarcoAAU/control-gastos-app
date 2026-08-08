@@ -36,7 +36,11 @@ export default defineConfig({
         // Workbox limpia las suyas, pero no sabe nada de aquélla.
         importScripts: ['purge-legacy-cache.js'],
       },
-      includeAssets: ['icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png'],
+      includeAssets: [
+        'icons/icon-192.png',
+        'icons/icon-512.png',
+        'icons/icon-maskable-512.png',
+      ],
       manifest: {
         name: 'Mis Gastos',
         short_name: 'Mis Gastos',
@@ -52,11 +56,29 @@ export default defineConfig({
         theme_color: '#0f172a',
         orientation: 'portrait',
         lang: 'es-CO',
+        /**
+         * ⚠️ `any` Y `maskable` SON DOS DIBUJOS DISTINTOS, NO EL MISMO.
+         *
+         * Antes el mismo archivo servía para los dos propósitos. Con el icono
+         * de marca eso rompe: Android recorta los iconos `maskable` con la
+         * forma que use el lanzador —círculo, gota, cuadrado redondeado— y
+         * puede llegar a comerse un 20% de cada borde. El logo, que ocupa casi
+         * todo el recuadro, se quedaría sin las puntas de la "M" y sin la
+         * flecha.
+         *
+         * Por eso hay dos archivos: el `any` conserva el recuadro redondeado
+         * tal cual, y el `maskable` pinta el azul a sangre con el logo metido
+         * al 68%, de modo que cualquier recorte cae sobre fondo liso.
+         */
         icons: [
-          { src: 'icons/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          {
+            src: 'icons/icon-maskable-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
         ],
       },
       devOptions: {
